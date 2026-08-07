@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  api:
+    build: ./backend
+    container_name: aion_api
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - postgres
+      - redis
+
+  postgres:
+    image: postgres:16
+    container_name: aion_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: aion
+      POSTGRES_USER: aion
+      POSTGRES_PASSWORD: aion
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: aion_redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
