@@ -1261,6 +1261,11 @@ function selectMention(agent) {
   setChatDock(true);
   input.focus();
   updateMentionUi();
+
+  const deskEl = state.officeDeskEls[agent.id];
+  if (deskEl) {
+    setTimeout(() => deskEl.scrollIntoView({ behavior: "smooth", block: "center" }), 220);
+  }
 }
 
 function updateMentionUi() {
