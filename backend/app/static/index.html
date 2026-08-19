@@ -223,7 +223,7 @@
   .office-room-label { position:relative; z-index:2; font-size:10px; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:#8291a7; margin-bottom:6px; }
   .office-room.director-room .office-room-label { color:#cbd9f5; }
   .office-desks { position:relative; z-index:2; display:flex; flex-wrap:wrap; align-items:flex-end; gap:16px; min-height:116px; }
-  .office-desk { width:78px; display:flex; flex-direction:column; align-items:center; cursor:pointer; position:relative; padding-top:4px; transition:filter .2s ease, transform .2s ease; }
+  .office-desk { width:78px; display:flex; flex-direction:column; align-items:center; gap:7px; cursor:pointer; position:relative; padding-top:4px; transition:filter .2s ease, transform .2s ease; }
   .office-desk:hover { transform:translateY(-3px); filter:drop-shadow(0 8px 8px rgba(27,57,102,.16)); }
   .office-desk.away { opacity:.26; pointer-events:none; }
   .office-workspace { height:78px; width:74px; position:relative; display:flex; align-items:flex-end; justify-content:center; }
@@ -244,8 +244,8 @@
   .character-arm { position:absolute; width:8px; height:25px; top:28px; left:0; background:#f1be97; border:1.5px solid #c98e68; border-radius:6px; transform:rotate(15deg); z-index:1; }
   .character-arm.right { left:27px; transform:rotate(-22deg); }.office-character.working .character-arm.right { animation:officeTyping .35s infinite alternate; }
   .character-legs { position:absolute; width:23px; height:9px; top:49px; left:6px; border-radius:2px; background:#26374f; }
-  .office-desk-name { position:relative; z-index:4; margin-top:-2px; min-height:22px; font-size:9px; font-weight:800; text-align:center; color:#55657a; line-height:1.15; }
-  .director-room .office-desk-name { color:#e0eafe; }
+  .office-desk-name { position:relative; z-index:4; min-height:22px; font-size:9px; font-weight:800; text-align:center; color:#3d4c60; line-height:1.25; background:#ffffffe0; padding:2px 6px; border-radius:6px; box-shadow:0 1px 2px rgba(20,40,70,.08); }
+  .director-room .office-desk-name { color:#16213a; background:#e7edfbea; }
   .office-desk .status-ring { z-index:6; bottom:15px; right:5px; border-color:#fff; }.director-room .office-desk .status-ring { border-color:#263b5d; }
   @keyframes officeIdleBob { 0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)} }
   @keyframes officeTyping { to { transform:rotate(-34deg) translateY(2px); } }
@@ -992,7 +992,7 @@ function officeDeskEl(agent, isDirector) {
       <div class="office-chair"></div><div class="office-monitor"></div>
       ${cartoonCharacter(statusClass, agent.id % 2 === 0)}
       <div class="desk-surface"></div><span class="status-ring ${statusClass === "idle" ? "" : statusClass}"></span>
-    </div><div class="office-desk-name">${escapeHtml(agent.name)}</div>`;
+    </div>${isDirector ? "" : `<div class="office-desk-name">${escapeHtml(agent.name)}</div>`}`;
 
   if (state.officeParked[agent.id]) wrap.classList.add("away");
 
