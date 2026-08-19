@@ -606,7 +606,17 @@
   }
 
   /* ---------- Access / whitelist page ---------- */
-  #whitelist-form-card { padding: 18px 20px; max-width: 420px; margin-top: 18px; }
+  #whitelist-form-card, #project-form-card { padding: 18px 20px; max-width: 420px; margin-top: 18px; }
+  #project-form { display: flex; gap: 8px; }
+  #project-form input {
+    flex: 1;
+    font: inherit;
+    font-size: 13.5px;
+    padding: 9px 11px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-2);
+  }
   #whitelist-form input, #whitelist-form select {
     width: 100%;
     font: inherit;
@@ -617,7 +627,7 @@
     background: var(--surface-2);
     margin-bottom: 10px;
   }
-  #whitelist-created {
+  #whitelist-created, #project-created {
     font-size: 12.5px;
     background: var(--ok-soft);
     color: var(--ok);
@@ -782,8 +792,19 @@
       <div class="empty-hint" style="padding:0 0 14px;">Только эти адреса могут войти в панель управления</div>
       <div id="whitelist-list"><div class="empty-hint">Загрузка…</div></div>
 
+      <div class="card" id="project-form-card">
+        <div class="section-title" style="margin-bottom:12px;">Новый проект</div>
+        <div class="empty-hint" style="padding:0 0 12px;">Отдельная компания со своей командой агентов — например, для нового бизнеса или филиала</div>
+        <div id="project-created" class="hidden"></div>
+        <form id="project-form">
+          <input id="project-name" type="text" placeholder="Название проекта" required />
+          <button class="btn" type="submit">Создать проект</button>
+        </form>
+      </div>
+
       <div class="card" id="whitelist-form-card">
         <div class="section-title" style="margin-bottom:12px;">Пригласить пользователя</div>
+        <div class="empty-hint" style="padding:0 0 12px;">Выбери проект и роль «Администратор», чтобы человек мог сам открывать этот проект, добавлять агентов и писать им промпты</div>
         <div id="whitelist-created" class="hidden"></div>
         <form id="whitelist-form">
           <input id="whitelist-email" type="email" placeholder="email@example.com" required />
@@ -1355,12 +1376,19 @@ function newChat() {
 function autoResize(t) { t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 140) + "px"; }
 
 /* ---------- Access / whitelist ---------- */
-async function loadWhitelist() {
+function populateWhitelistCompanySelect() {
   const select = el("whitelist-company");
-  if (state.companies.length && select.options.length === 0) {
-    select.innerHTML = state.companies.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
-    if (state.me) select.value = state.me.company_id;
+  const prevValue = select.value;
+  select.innerHTML = state.companies.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
+  if (state.companies.find(c => String(c.id) === prevValue)) {
+    select.value = prevValue;
+  } else if (state.me) {
+    select.value = state.me.company_id;
   }
+}
+
+async function loadWhitelist() {
+  populateWhitelistCompanySelect();
   state.whitelist = await api("/auth/whitelist");
   renderWhitelist();
 }
@@ -1389,6 +1417,31 @@ async function removeWhitelistEntry(id) {
     showError("Не удалось удалить: " + e.message);
   }
 }
+
+el("project-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const input = el("project-name");
+  const name = input.value.trim();
+  if (!name) return;
+  try {
+    const company = await api("/companies/", { method: "POST", body: JSON.stringify({ name }) });
+    state.companies.push(company);
+    input.value = "";
+
+    const banner = el("project-created");
+    banner.textContent = `Проект «${company.name}» создан — теперь можно пригласить для него администратора ниже.`;
+    banner.classList.remove("hidden");
+
+    populateWhitelistCompanySelect();
+    el("whitelist-company").value = company.id;
+
+    const sidebarSelect = el("company-select");
+    sidebarSelect.innerHTML = state.companies.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
+    sidebarSelect.value = state.companyId;
+  } catch (err) {
+    showError("Не удалось создать проект: " + err.message);
+  }
+});
 
 el("whitelist-form").addEventListener("submit", async (e) => {
   e.preventDefault();
