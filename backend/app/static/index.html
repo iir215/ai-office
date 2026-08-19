@@ -1,0 +1,1521 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>AI Office</title>
+
+<link rel="manifest" href="/ui/manifest.json" />
+<link rel="apple-touch-icon" href="/ui/apple-touch-icon.png" />
+<link rel="icon" href="/ui/icon-192.png" />
+<meta name="theme-color" content="#1d4ed8" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="AI Office" />
+<meta name="mobile-web-app-capable" content="yes" />
+
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --surface: #ffffff;
+    --surface-2: #fafbfc;
+    --ink: #14171c;
+    --ink-soft: #676e79;
+    --ink-faint: #9aa1ac;
+    --border: #e4e7eb;
+    --accent: #1d4ed8;
+    --accent-soft: #e8eefd;
+    --ok: #15803d;
+    --ok-soft: #e7f6ec;
+    --busy: #b45309;
+    --busy-soft: #fdf0dc;
+    --err: #b91c1c;
+    --err-soft: #fbe9e9;
+    --radius: 10px;
+    --radius-lg: 14px;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input, textarea, select { font-family: inherit; }
+  .mono { font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace; font-variant-numeric: tabular-nums; }
+
+  #app { display: flex; height: 100vh; }
+
+  /* ---------- Sidebar ---------- */
+  #sidebar {
+    width: 232px;
+    min-width: 232px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+  }
+  .brand {
+    padding: 22px 20px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .brand-name {
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+  .brand-tag {
+    margin-top: 2px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  nav#nav {
+    padding: 14px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: var(--radius);
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    cursor: pointer;
+    border: none;
+    background: none;
+    text-align: left;
+    width: 100%;
+  }
+  .nav-item:hover { background: var(--surface-2); color: var(--ink); }
+  .nav-item.active { background: var(--accent-soft); color: var(--accent); }
+  .nav-item .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .55; }
+
+  #sidebar-footer {
+    margin-top: auto;
+    padding: 14px 16px 18px;
+    border-top: 1px solid var(--border);
+  }
+  #sidebar-footer label {
+    display: block;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 6px;
+  }
+  #company-select {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 7px 8px;
+    background: var(--surface-2);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  /* ---------- Main ---------- */
+  #main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+  #topbar {
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  #topbar h1 {
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+  #topbar .sub { font-size: 12.5px; color: var(--ink-soft); margin-top: 3px; }
+  #topbar .right { font-size: 12px; color: var(--ink-faint); }
+
+  .page { flex: 1; overflow-y: auto; padding: 28px 32px; }
+  .page.hidden { display: none; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+
+  /* Stat cards */
+  #stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+  .stat-card { padding: 16px 18px; }
+  .stat-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .stat-value {
+    margin-top: 8px;
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    margin: 0 0 14px;
+  }
+
+  .avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12.5px; font-weight: 800; color: #fff;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .status-ring {
+    position: absolute;
+    bottom: -1px; right: -1px;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    border: 2px solid var(--surface);
+    background: var(--ok);
+  }
+  .status-ring.busy { background: var(--busy); }
+  .status-ring.error, .status-ring.offline { background: var(--err); }
+
+  .agent-name { font-size: 13px; font-weight: 700; white-space: nowrap; }
+  .agent-sub { font-size: 11px; color: var(--ink-faint); margin-top: 1px; }
+
+  /* ---------- Office scene ---------- */
+  #office-card { padding: 20px 20px 24px; margin-bottom: 22px; }
+  #office-scene {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+    gap: 12px;
+  }
+  .office-room {
+    position: relative;
+    background: linear-gradient(160deg, var(--surface-2), var(--surface));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px 14px;
+    min-height: 108px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.5);
+    overflow: hidden;
+  }
+  .office-room.director-room {
+    background: linear-gradient(155deg, #23293a, #14171c);
+    border-color: #14171c;
+  }
+  .office-room-label {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .office-room.director-room .office-room-label { color: #ffffff85; }
+  .office-desks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .office-desk {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 62px;
+    cursor: pointer;
+  }
+  .office-desk .avatar { animation: officeIdleBob 3.4s ease-in-out infinite; }
+  .office-desk:nth-child(2n) .avatar { animation-delay: -1.1s; }
+  .office-desk:nth-child(3n) .avatar { animation-delay: -2.2s; }
+  .office-desk .desk-surface {
+    width: 40px; height: 7px;
+    background: var(--border);
+    border-radius: 2px 2px 5px 5px;
+  }
+  .office-room.director-room .desk-surface { background: #ffffff30; }
+  .office-desk.away .avatar { opacity: .22; animation-play-state: paused; }
+  .office-desk.away .desk-surface { opacity: .35; }
+  .office-desk-name {
+    font-size: 9.5px;
+    font-weight: 700;
+    text-align: center;
+    color: var(--ink-soft);
+    line-height: 1.25;
+  }
+  .office-room.director-room .office-desk-name { color: #ffffffcc; }
+  @keyframes officeIdleBob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-2px); }
+  }
+  .office-walker {
+    position: fixed;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12.5px; font-weight: 800; color: #fff;
+    z-index: 55;
+    pointer-events: none;
+    box-shadow: 0 5px 12px rgba(0,0,0,.22);
+    transition: transform 1.1s cubic-bezier(.4,0,.2,1), opacity .3s ease;
+  }
+  .office-brand {
+    position: absolute;
+    bottom: 4px; right: 4px;
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    opacity: .5;
+  }
+
+  /* Activity feed */
+  #activity-card { padding: 6px 0 10px; }
+  #activity-card .section-title { padding: 18px 22px 0; }
+  .activity-row {
+    display: flex;
+    gap: 12px;
+    padding: 12px 22px;
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .activity-row:first-of-type { border-top: none; }
+  .activity-badge {
+    flex-shrink: 0;
+    width: 7px; height: 7px; border-radius: 50%;
+    margin-top: 6px;
+    background: var(--ok);
+  }
+  .activity-badge.running { background: var(--busy); }
+  .activity-badge.failed { background: var(--err); }
+  .activity-body { flex: 1; min-width: 0; }
+  .activity-title { font-weight: 600; }
+  .activity-meta { color: var(--ink-faint); font-size: 11.5px; margin-top: 2px; }
+  .activity-text {
+    color: var(--ink-soft);
+    margin-top: 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .empty-hint { font-size: 13px; color: var(--ink-faint); padding: 20px 22px; }
+
+  /* ---------- Team page ---------- */
+  #team-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+  .team-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+  .team-row .agent-name { flex: 1; }
+  .badge {
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    color: var(--ink-soft);
+    border: 1px solid var(--border);
+  }
+  .badge.ok { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
+  .badge.busy { background: var(--busy-soft); color: var(--busy); border-color: transparent; }
+  .badge.err { background: var(--err-soft); color: var(--err); border-color: transparent; }
+
+  #team-form { padding: 18px 20px; max-width: 480px; }
+  #team-form input, #team-form textarea {
+    width: 100%;
+    font: inherit;
+    font-size: 13.5px;
+    padding: 9px 11px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-2);
+    margin-bottom: 10px;
+    resize: vertical;
+  }
+  #team-form textarea { min-height: 72px; }
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+  .checkbox-row input { width: auto; margin: 0; }
+
+  .btn {
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 9px 16px;
+    border-radius: var(--radius);
+    border: none;
+    cursor: pointer;
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .btn.secondary { background: var(--surface); color: var(--ink); border: 1px solid var(--border); }
+
+  /* ---------- Chat dock (persistent bottom panel) ---------- */
+  #chat-dock {
+    flex-shrink: 0;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+  }
+  #chat-dock-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 32px;
+    cursor: pointer;
+    user-select: none;
+    flex-shrink: 0;
+  }
+  #chat-dock-bar .title {
+    font-size: 13.5px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #chat-dock-bar .title .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+  #chat-dock-bar .sub { font-size: 12px; color: var(--ink-soft); font-weight: 500; }
+  #chat-dock-bar .chevron { color: var(--ink-faint); font-size: 12px; transition: transform .18s ease; }
+  #chat-dock.open #chat-dock-bar .chevron { transform: rotate(180deg); }
+
+  #chat-dock-body {
+    height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: height .2s ease;
+    border-top: 1px solid transparent;
+  }
+  #chat-dock.open #chat-dock-body {
+    height: 50vh;
+    border-top-color: var(--border);
+  }
+
+  #chat-toolbar {
+    padding: 10px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  #chat-toolbar .sub { font-size: 12px; color: var(--ink-soft); }
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .msg-row { display: flex; }
+  .msg-row.user { justify-content: flex-end; }
+  .bubble {
+    max-width: 60%;
+    padding: 10px 14px;
+    border-radius: var(--radius-lg);
+    font-size: 14px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  .msg-row.user .bubble { background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
+  .msg-row.agent .bubble { background: var(--surface-2); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+  .bubble .sender { display: block; font-size: 11px; font-weight: 700; opacity: .65; margin-bottom: 3px; }
+  .bubble .time { display: block; font-size: 10px; opacity: .5; margin-top: 5px; }
+
+  .mention-hint { font-size: 11.5px; color: var(--accent); padding: 0 32px 8px; }
+
+  #composer {
+    padding: 16px 32px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+  }
+  #composer textarea {
+    flex: 1;
+    font: inherit;
+    font-size: 14px;
+    padding: 11px 14px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    resize: none;
+    max-height: 140px;
+    background: var(--surface-2);
+  }
+  #composer textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+  .banner {
+    margin: 0 32px 16px;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    background: var(--err-soft);
+    color: var(--err);
+  }
+  .hidden { display: none !important; }
+  .empty-state { margin: auto; text-align: center; color: var(--ink-faint); font-size: 14px; max-width: 320px; }
+
+
+  /* ---------- Mobile / PWA ---------- */
+  @media (max-width: 768px) {
+    #app { flex-direction: column; height: 100dvh; }
+
+    #sidebar {
+      width: 100%;
+      min-width: 0;
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+      padding: calc(10px + env(safe-area-inset-top)) 14px 10px;
+      flex-shrink: 0;
+    }
+    .brand { padding: 0; border-bottom: none; flex-shrink: 0; }
+    .brand-name { font-size: 14px; }
+    .brand-tag { display: none; }
+
+    nav#nav {
+      flex: 1;
+      flex-direction: row;
+      padding: 0;
+      gap: 4px;
+      overflow-x: auto;
+    }
+    .nav-item { padding: 7px 10px; font-size: 12px; white-space: nowrap; }
+
+    #sidebar-footer { margin-top: 0; padding: 0; border-top: none; flex-shrink: 0; max-width: 130px; }
+    #sidebar-footer label { display: none; }
+    #company-select { font-size: 12px; padding: 6px 6px; }
+
+    #main { flex: 1; min-height: 0; }
+    #topbar { padding: 14px 16px; }
+    .page { padding: 16px; }
+
+    #stats { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+
+    #chat-dock-bar { padding: 12px 16px; }
+    #chat-toolbar { padding: 10px 16px; }
+    #messages { padding: 16px; }
+    #composer {
+      padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    }
+    .mention-hint { padding: 0 16px 8px; }
+
+    #chat-dock.open #chat-dock-body { height: 78vh; }
+    .bubble { max-width: 85%; }
+
+    #user-footer { padding: 0; border-top: none; }
+    #user-footer .who { display: none; }
+  }
+
+  /* ---------- Login screen ---------- */
+  #login-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+  }
+  #login-screen.hidden { display: none; }
+  #login-card {
+    width: 100%;
+    max-width: 340px;
+    padding: 28px 26px;
+  }
+  #login-card .brand-name { font-size: 18px; margin-bottom: 2px; }
+  #login-card .login-sub { font-size: 12.5px; color: var(--ink-soft); margin-bottom: 22px; }
+  #login-card label {
+    display: block;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 6px;
+  }
+  #login-card input {
+    width: 100%;
+    font: inherit;
+    font-size: 13.5px;
+    padding: 10px 11px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-2);
+    margin-bottom: 14px;
+  }
+  #login-card input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  #login-card .btn { width: 100%; padding: 11px; margin-top: 4px; }
+  #login-error {
+    font-size: 12.5px;
+    color: var(--err);
+    background: var(--err-soft);
+    padding: 8px 11px;
+    border-radius: var(--radius);
+    margin-bottom: 14px;
+  }
+
+  /* ---------- Access / whitelist page ---------- */
+  #whitelist-form-card { padding: 18px 20px; max-width: 420px; margin-top: 18px; }
+  #whitelist-form input, #whitelist-form select {
+    width: 100%;
+    font: inherit;
+    font-size: 13.5px;
+    padding: 9px 11px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-2);
+    margin-bottom: 10px;
+  }
+  #whitelist-created {
+    font-size: 12.5px;
+    background: var(--ok-soft);
+    color: var(--ok);
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    margin-bottom: 14px;
+    line-height: 1.6;
+  }
+  #whitelist-created .pw { font-family: ui-monospace, "SF Mono", Consolas, monospace; font-weight: 700; }
+  .whitelist-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    max-width: 420px;
+    margin-bottom: 8px;
+  }
+  .whitelist-row span { flex: 1; font-size: 13.5px; }
+  .whitelist-row button {
+    border: none;
+    background: none;
+    color: var(--err);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+  #user-footer {
+    padding: 12px 16px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  #user-footer .who { font-size: 12px; color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #logout-btn { border: none; background: none; color: var(--ink-faint); font-size: 11.5px; font-weight: 700; cursor: pointer; flex-shrink: 0; }
+  #logout-btn:hover { color: var(--err); }
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="card" id="login-card">
+    <div class="brand-name">AI Office</div>
+    <div class="login-sub">Вход в панель управления</div>
+    <div id="login-error" class="hidden"></div>
+    <label>Email</label>
+    <input id="login-email" type="email" autocomplete="username" />
+    <label>Пароль</label>
+    <input id="login-password" type="password" autocomplete="current-password" />
+    <button class="btn" id="login-btn">Войти</button>
+  </div>
+</div>
+
+<div id="app">
+  <aside id="sidebar">
+    <div class="brand">
+      <div class="brand-name">AI Office</div>
+      <div class="brand-tag" id="brand-tag">—</div>
+    </div>
+    <nav id="nav">
+      <button class="nav-item active" data-page="dashboard"><span class="dot"></span>Дашборд</button>
+      <button class="nav-item" data-page="team"><span class="dot"></span>Команда</button>
+      <button class="nav-item hidden" data-page="access" id="nav-access"><span class="dot"></span>Доступ</button>
+      <button class="nav-item" id="nav-chat-toggle"><span class="dot"></span>Чат с Director</button>
+    </nav>
+    <div id="sidebar-footer">
+      <label>Компания</label>
+      <select id="company-select"><option>Загрузка…</option></select>
+    </div>
+    <div id="user-footer">
+      <span class="who" id="user-who">—</span>
+      <button id="logout-btn">Выйти</button>
+    </div>
+  </aside>
+
+  <main id="main">
+    <header id="topbar">
+      <div>
+        <h1 id="page-title">Дашборд</h1>
+        <div class="sub" id="page-sub">—</div>
+      </div>
+      <div class="right mono" id="topbar-date">—</div>
+    </header>
+
+    <div id="error-banner" class="banner hidden" style="margin:16px 32px 0;"></div>
+
+    <!-- Dashboard -->
+    <section class="page" id="page-dashboard">
+      <div id="stats">
+        <div class="card stat-card">
+          <div class="stat-label">Агентов в команде</div>
+          <div class="stat-value mono" id="stat-total">—</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-label">Готовы сейчас</div>
+          <div class="stat-value mono" id="stat-idle">—</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-label">Работают сейчас</div>
+          <div class="stat-value mono" id="stat-busy">—</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-label">Задач выполнено</div>
+          <div class="stat-value mono" id="stat-done">—</div>
+        </div>
+      </div>
+
+      <div class="card" id="office-card">
+        <div class="section-title">Офис QARS</div>
+        <div id="office-scene">
+          <div class="office-room director-room" id="office-room-director">
+            <div class="office-room-label">🧭 Директор</div>
+            <div class="office-desks" id="office-desks-director"></div>
+          </div>
+          <div class="office-room" id="office-room-ops">
+            <div class="office-room-label">📦 Операционный отдел</div>
+            <div class="office-desks" id="office-desks-ops"></div>
+          </div>
+          <div class="office-room" id="office-room-marketing">
+            <div class="office-room-label">📣 Маркетинг и PR</div>
+            <div class="office-desks" id="office-desks-marketing"></div>
+          </div>
+          <div class="office-room" id="office-room-support">
+            <div class="office-room-label">🛟 Поддержка и HR</div>
+            <div class="office-desks" id="office-desks-support"></div>
+          </div>
+          <div class="office-brand">QARS · AI Office</div>
+        </div>
+      </div>
+
+      <div class="card" id="activity-card">
+        <div class="section-title">Последняя активность</div>
+        <div id="activity-list"><div class="empty-hint">Пока нет задач</div></div>
+      </div>
+    </section>
+
+    <!-- Team -->
+    <section class="page hidden" id="page-team">
+      <div class="section-title">Агенты</div>
+      <div id="team-list"><div class="empty-hint">Загрузка…</div></div>
+
+      <div class="card" id="team-form">
+        <div class="section-title" style="margin-bottom:12px;">Добавить агента</div>
+        <input id="agent-name" type="text" placeholder="Имя агента" />
+        <textarea id="agent-prompt" placeholder="Системный промпт — что умеет агент"></textarea>
+        <div class="checkbox-row"><input type="checkbox" id="agent-notify" /> Уведомлять в Telegram по завершении задачи</div>
+        <div class="checkbox-row"><input type="checkbox" id="agent-security" /> Специалист по ИБ (периодический аудит)</div>
+        <div class="checkbox-row"><input type="checkbox" id="agent-publish" /> Публикует в Instagram (с подтверждением)</div>
+        <div class="checkbox-row"><input type="checkbox" id="agent-support" /> Отвечает на комментарии/сообщения в Instagram</div>
+        <button class="btn" id="create-agent-btn">Добавить агента</button>
+      </div>
+    </section>
+
+    <!-- Access / whitelist (admin only) -->
+    <section class="page hidden" id="page-access">
+      <div class="section-title">Белый список email</div>
+      <div class="empty-hint" style="padding:0 0 14px;">Только эти адреса могут войти в панель управления</div>
+      <div id="whitelist-list"><div class="empty-hint">Загрузка…</div></div>
+
+      <div class="card" id="whitelist-form-card">
+        <div class="section-title" style="margin-bottom:12px;">Пригласить пользователя</div>
+        <div id="whitelist-created" class="hidden"></div>
+        <form id="whitelist-form">
+          <input id="whitelist-email" type="email" placeholder="email@example.com" required />
+          <input id="whitelist-name" type="text" placeholder="Имя" required />
+          <select id="whitelist-company"></select>
+          <select id="whitelist-role">
+            <option value="1">Администратор</option>
+            <option value="2">Менеджер</option>
+            <option value="3" selected>Сотрудник</option>
+          </select>
+          <button class="btn" type="submit">Добавить и выдать доступ</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Persistent chat dock -->
+    <div id="chat-dock">
+      <div id="chat-dock-bar">
+        <div class="title"><span class="dot"></span>Чат с Director <span class="sub" id="chat-subtitle">Новый диалог</span></div>
+        <div style="display:flex; align-items:center; gap:14px;">
+          <button class="btn secondary" id="new-chat-btn" style="padding:5px 12px; font-size:12px;">Новый диалог</button>
+          <span class="chevron">▲</span>
+        </div>
+      </div>
+      <div id="chat-dock-body">
+        <div id="messages">
+          <div class="empty-state" id="empty-state">Напиши что-нибудь Director'у, чтобы начать.</div>
+        </div>
+        <div class="mention-hint hidden" id="mention-hint"></div>
+        <div id="composer">
+          <textarea id="message-input" rows="1" placeholder="Сообщение Director'у…"></textarea>
+          <button class="btn" id="send-btn">Отправить</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<div id="fx-layer"></div>
+
+<script>
+const API = "";
+const state = {
+  companies: [],
+  companyId: null,
+  companyName: "",
+  userId: null,
+  conversationId: null,
+  agents: [],
+  tasks: [],
+  messages: [],
+  sending: false,
+  prevStatus: {},
+  statusLoadedOnce: false,
+  officeDeskEls: {},
+  officeParked: {},
+  mentionedAgent: null,
+  currentPage: "dashboard",
+  chatOpen: false,
+  token: localStorage.getItem("aion_token") || null,
+  me: null,
+  whitelist: [],
+};
+
+const el = (id) => document.getElementById(id);
+
+function showError(text) {
+  const b = el("error-banner");
+  b.textContent = text;
+  b.classList.remove("hidden");
+  setTimeout(() => b.classList.add("hidden"), 6000);
+}
+
+function showLogin(message) {
+  el("login-screen").classList.remove("hidden");
+  el("app").classList.add("hidden");
+  const err = el("login-error");
+  if (message) {
+    err.textContent = message;
+    err.classList.remove("hidden");
+  } else {
+    err.classList.add("hidden");
+  }
+}
+
+function hideLogin() {
+  el("login-screen").classList.add("hidden");
+  el("app").classList.remove("hidden");
+}
+
+function logout() {
+  state.token = null;
+  state.me = null;
+  localStorage.removeItem("aion_token");
+  showLogin();
+}
+
+async function api(path, options) {
+  const headers = { "Content-Type": "application/json" };
+  if (state.token) headers["Authorization"] = "Bearer " + state.token;
+  const res = await fetch(API + path, {
+    headers,
+    ...options,
+  });
+  if (res.status === 401) {
+    logout();
+    throw new Error("Требуется вход");
+  }
+  if (!res.ok) {
+    let detail = res.statusText;
+    try { detail = (await res.json()).detail || detail; } catch (e) {}
+    throw new Error(detail);
+  }
+  return res.status === 204 ? null : res.json();
+}
+
+function escapeHtml(s) {
+  const d = document.createElement("div");
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function fmtTime(iso) {
+  const d = new Date(iso.endsWith("Z") ? iso : iso + "Z");
+  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function fmtDateTime(iso) {
+  const d = new Date(iso.endsWith("Z") ? iso : iso + "Z");
+  return d.toLocaleString([], { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+
+const PALETTE = ["#1d4ed8", "#0f766e", "#b45309", "#7c3aed", "#0369a1", "#be123c", "#4d7c0f"];
+function colorForName(name) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  return PALETTE[hash % PALETTE.length];
+}
+function initials(name) {
+  return name.trim().split(/\s+/).slice(0, 2).map(w => w[0]).join("").toUpperCase();
+}
+const STATUS_LABEL = { idle: "готов", busy: "работает", error: "ошибка", offline: "офлайн" };
+
+/* ---------- Navigation ---------- */
+function setPage(page) {
+  state.currentPage = page;
+  document.querySelectorAll(".nav-item[data-page]").forEach(b => b.classList.toggle("active", b.dataset.page === page));
+  document.querySelectorAll(".page").forEach(p => p.classList.add("hidden"));
+  el("page-" + page).classList.remove("hidden");
+
+  const titles = {
+    dashboard: ["Дашборд", "Реальный статус команды и последняя активность"],
+    team: ["Команда", "Управление агентами компании"],
+    access: ["Доступ", "Белый список email для входа в панель"],
+  };
+  el("page-title").textContent = titles[page][0];
+  el("page-sub").textContent = titles[page][1];
+
+  if (page === "access") loadWhitelist().catch((e) => showError("Не удалось загрузить список: " + e.message));
+}
+document.querySelectorAll(".nav-item[data-page]").forEach(b => b.addEventListener("click", () => setPage(b.dataset.page)));
+
+/* ---------- Chat dock open/close ---------- */
+function setChatDock(open) {
+  state.chatOpen = open;
+  el("chat-dock").classList.toggle("open", open);
+  el("nav-chat-toggle").classList.toggle("active", open);
+  if (open) {
+    el("message-input").focus();
+    if (state.conversationId) loadMessages().catch(() => {});
+  }
+}
+function toggleChatDock() { setChatDock(!state.chatOpen); }
+
+function clearMention() {
+  if (!state.mentionedAgent) return;
+  const input = el("message-input");
+  const prefix = `@${state.mentionedAgent} `;
+  if (input.value.startsWith(prefix)) input.value = input.value.slice(prefix.length);
+  state.mentionedAgent = null;
+  updateMentionUi();
+}
+
+el("nav-chat-toggle").addEventListener("click", () => {
+  const opening = !state.chatOpen;
+  if (opening) clearMention();
+  toggleChatDock();
+});
+el("chat-dock-bar").addEventListener("click", toggleChatDock);
+el("new-chat-btn").addEventListener("click", (e) => { e.stopPropagation(); newChat(); });
+
+/* ---------- Office scene / dashboard ---------- */
+const OFFICE_ROOM_RULES = [
+  { id: "ops", match: ["Операционн", "закупкам", "Финансов"] },
+  { id: "marketing", match: ["Маркетолог", "PR-", "SMM"] },
+  { id: "support", match: ["HR", "ИБ", "Ревизор", "Поддержк"] },
+];
+function roomIdForAgent(agent) {
+  for (const rule of OFFICE_ROOM_RULES) {
+    if (rule.match.some(k => agent.name.includes(k))) return rule.id;
+  }
+  return "support";
+}
+
+function officeDeskEl(agent, isDirector) {
+  const wrap = document.createElement("div");
+  wrap.className = "office-desk";
+  const statusClass = agent.status || "idle";
+  const color = colorForName(agent.name);
+
+  wrap.innerHTML = `
+    <div class="avatar" style="background:${color}">${initials(agent.name)}<span class="status-ring ${statusClass === "idle" ? "" : statusClass}"></span></div>
+    <div class="desk-surface"></div>
+    <div class="office-desk-name">${escapeHtml(agent.name)}</div>
+  `;
+
+  if (state.officeParked[agent.id]) wrap.classList.add("away");
+
+  if (!isDirector) {
+    wrap.addEventListener("click", () => selectMention(agent));
+  }
+  return wrap;
+}
+
+function renderOfficeScene() {
+  const director = state.agents.find(a => a.role_type === "director");
+  const workers = state.agents.filter(a => a.role_type === "worker");
+
+  state.officeDeskEls = {};
+
+  const dirContainer = el("office-desks-director");
+  dirContainer.innerHTML = "";
+  if (director) {
+    const node = officeDeskEl(director, true);
+    dirContainer.appendChild(node);
+    state.officeDeskEls[director.id] = node;
+  }
+
+  ["ops", "marketing", "support"].forEach(id => { el("office-desks-" + id).innerHTML = ""; });
+
+  if (workers.length === 0) {
+    el("office-desks-support").innerHTML = '<div class="empty-hint" style="padding:0;">Пока нет агентов</div>';
+  } else {
+    workers.forEach(a => {
+      const node = officeDeskEl(a, false);
+      el("office-desks-" + roomIdForAgent(a)).appendChild(node);
+      state.officeDeskEls[a.id] = node;
+    });
+  }
+}
+
+function officeMoveWalker(walker, toEl) {
+  if (!toEl) return;
+  const b = toEl.getBoundingClientRect();
+  const dx = (b.left + b.width / 2) - Number(walker.dataset.baseLeft);
+  const dy = (b.top + b.height / 2) - Number(walker.dataset.baseTop);
+  requestAnimationFrame(() => {
+    walker.style.transform = `translate(${dx}px, ${dy}px)`;
+  });
+}
+
+function officeSpawnWalker(fromEl, color, label) {
+  const a = fromEl.getBoundingClientRect();
+  const walker = document.createElement("div");
+  walker.className = "office-walker";
+  walker.style.background = color;
+  walker.textContent = label;
+  const cx = a.left + a.width / 2, cy = a.top + a.height / 2;
+  walker.style.left = (cx - 17) + "px";
+  walker.style.top = (cy - 17) + "px";
+  walker.dataset.baseLeft = cx;
+  walker.dataset.baseTop = cy;
+  walker.style.transform = "translate(0,0)";
+  el("fx-layer").appendChild(walker);
+  return walker;
+}
+
+function officeWalkToDirector(agent) {
+  const deskEl = state.officeDeskEls[agent.id];
+  const director = state.agents.find(a => a.role_type === "director");
+  const dirDeskEl = director ? state.officeDeskEls[director.id] : null;
+  const avatarEl = deskEl ? deskEl.querySelector(".avatar") : null;
+  const dirAvatarEl = dirDeskEl ? dirDeskEl.querySelector(".avatar") : null;
+  if (!deskEl || !avatarEl || !dirAvatarEl) return;
+
+  deskEl.classList.add("away");
+  const walker = officeSpawnWalker(avatarEl, colorForName(agent.name), initials(agent.name));
+  officeMoveWalker(walker, dirAvatarEl);
+  state.officeParked[agent.id] = walker;
+}
+
+function officeWalkBack(agent) {
+  const walker = state.officeParked[agent.id];
+  const deskEl = state.officeDeskEls[agent.id];
+  if (!walker) {
+    if (deskEl) deskEl.classList.remove("away");
+    return;
+  }
+  delete state.officeParked[agent.id];
+  if (!deskEl) { walker.remove(); return; }
+
+  officeMoveWalker(walker, deskEl.querySelector(".avatar"));
+  setTimeout(() => {
+    walker.style.opacity = "0";
+    setTimeout(() => walker.remove(), 350);
+    deskEl.classList.remove("away");
+  }, 1150);
+}
+
+function renderStats() {
+  const workers = state.agents.filter(a => a.role_type === "worker");
+  el("stat-total").textContent = workers.length;
+  el("stat-idle").textContent = workers.filter(a => a.status === "idle").length;
+  el("stat-busy").textContent = workers.filter(a => a.status === "busy").length;
+  el("stat-done").textContent = state.tasks.filter(t => t.status === "done").length;
+}
+
+function renderActivity() {
+  const list = el("activity-list");
+  const recent = state.tasks.slice(0, 8);
+  if (recent.length === 0) {
+    list.innerHTML = '<div class="empty-hint">Пока нет задач — делегируй что-нибудь через чат</div>';
+    return;
+  }
+  list.innerHTML = "";
+  recent.forEach(t => {
+    const agent = state.agents.find(a => a.id === t.assigned_agent_id);
+    const row = document.createElement("div");
+    row.className = "activity-row";
+    const badgeClass = t.status === "done" ? "" : t.status === "failed" ? "failed" : "running";
+    row.innerHTML = `
+      <div class="activity-badge ${badgeClass}"></div>
+      <div class="activity-body">
+        <div class="activity-title">${escapeHtml(agent ? agent.name : "Агент")} <span class="activity-meta">· ${t.status}</span></div>
+        <div class="activity-meta mono">${fmtDateTime(t.created_at)}</div>
+        <div class="activity-text">${escapeHtml(t.instructions)}</div>
+      </div>
+    `;
+    list.appendChild(row);
+  });
+}
+
+function detectStatusChanges(newAgents) {
+  newAgents.forEach(a => {
+    const prev = state.prevStatus[a.id];
+    if (state.statusLoadedOnce && prev && prev !== a.status && a.role_type === "worker") {
+      if (prev === "idle" && a.status === "busy") officeWalkToDirector(a);
+      else if (prev === "busy" && (a.status === "idle" || a.status === "error")) officeWalkBack(a);
+    }
+    state.prevStatus[a.id] = a.status;
+  });
+  state.statusLoadedOnce = true;
+}
+
+/* ---------- Team page ---------- */
+function renderTeamList() {
+  const list = el("team-list");
+  if (state.agents.length === 0) {
+    list.innerHTML = '<div class="empty-hint">Пока нет агентов</div>';
+    return;
+  }
+  list.innerHTML = "";
+  state.agents.forEach(a => {
+    const row = document.createElement("div");
+    row.className = "team-row";
+    const statusClass = a.status === "idle" ? "ok" : a.status === "busy" ? "busy" : "err";
+    const flags = [
+      a.notify_owner ? "🔔" : "",
+      a.is_security_auditor ? "🛡️ ИБ" : "",
+      a.can_publish_instagram ? "📸 Instagram" : "",
+      a.handles_instagram_support ? "💬 Поддержка" : "",
+    ].filter(Boolean).join("  ");
+    row.innerHTML = `
+      <div class="avatar" style="background:${colorForName(a.name)}; width:28px; height:28px; font-size:11px;">${initials(a.name)}</div>
+      <div class="agent-name">${escapeHtml(a.name)}${flags ? " — " + flags : ""}</div>
+      <span class="badge ${statusClass}">${STATUS_LABEL[a.status] || a.status}</span>
+    `;
+    if (a.role_type === "worker") {
+      row.style.cursor = "pointer";
+      row.addEventListener("click", () => selectMention(a));
+    }
+    list.appendChild(row);
+  });
+}
+
+async function createAgent() {
+  const name = el("agent-name").value.trim();
+  const prompt = el("agent-prompt").value.trim();
+  if (!name || !prompt) { showError("Укажи имя и промпт агента"); return; }
+  try {
+    await api("/agents/", {
+      method: "POST",
+      body: JSON.stringify({
+        company_id: state.companyId,
+        name,
+        system_prompt: prompt,
+        notify_owner: el("agent-notify").checked,
+        is_security_auditor: el("agent-security").checked,
+        can_publish_instagram: el("agent-publish").checked,
+        handles_instagram_support: el("agent-support").checked,
+      }),
+    });
+    ["agent-name", "agent-prompt"].forEach(id => el(id).value = "");
+    ["agent-notify", "agent-security", "agent-publish", "agent-support"].forEach(id => el(id).checked = false);
+    await loadAgents();
+    renderTeamList();
+  } catch (e) {
+    showError("Не удалось создать агента: " + e.message);
+  }
+}
+
+/* ---------- Chat ---------- */
+function selectMention(agent) {
+  const input = el("message-input");
+  const prefix = `@${agent.name} `;
+
+  if (state.mentionedAgent === agent.name) {
+    // Clicking the same agent again: clear mention and close the dock.
+    clearMention();
+    setChatDock(false);
+    return;
+  }
+
+  clearMention();
+  state.mentionedAgent = agent.name;
+  if (!input.value.startsWith(prefix)) input.value = prefix + input.value;
+
+  setChatDock(true);
+  input.focus();
+  updateMentionUi();
+}
+
+function updateMentionUi() {
+  const hint = el("mention-hint");
+  if (state.mentionedAgent) {
+    hint.textContent = `Обращение к «${state.mentionedAgent}» — Director получит и делегирует`;
+    hint.classList.remove("hidden");
+  } else {
+    hint.classList.add("hidden");
+  }
+}
+
+function renderMessages() {
+  const box = el("messages");
+  const empty = el("empty-state");
+  if (state.messages.length === 0) {
+    box.innerHTML = "";
+    box.appendChild(empty);
+    return;
+  }
+  const wasAtBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 40;
+  box.innerHTML = "";
+  state.messages.forEach(m => {
+    const row = document.createElement("div");
+    row.className = "msg-row " + (m.sender_type === "user" ? "user" : "agent");
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    let senderLabel = "";
+    if (m.sender_type !== "user") {
+      const agent = state.agents.find(a => a.id === m.agent_id);
+      senderLabel = `<span class="sender">${escapeHtml(agent ? agent.name : "Агент")}</span>`;
+    }
+    bubble.innerHTML = `${senderLabel}${escapeHtml(m.content)}<span class="time">${fmtTime(m.created_at)}</span>`;
+    row.appendChild(bubble);
+    box.appendChild(row);
+  });
+  if (wasAtBottom) box.scrollTop = box.scrollHeight;
+}
+
+async function loadMessages() {
+  if (!state.conversationId) return;
+  state.messages = await api(`/conversations/${state.conversationId}/messages`);
+  renderMessages();
+}
+
+async function sendMessage() {
+  const input = el("message-input");
+  const text = input.value.trim();
+  if (!text || state.sending) return;
+
+  state.sending = true;
+  el("send-btn").disabled = true;
+  input.value = "";
+  autoResize(input);
+  state.mentionedAgent = null;
+  updateMentionUi();
+
+  state.messages.push({ sender_type: "user", agent_id: null, content: text, created_at: new Date().toISOString() });
+  renderMessages();
+
+  try {
+    const res = await api("/chat/", {
+      method: "POST",
+      body: JSON.stringify({ company_id: state.companyId, user_id: state.userId, conversation_id: state.conversationId, message: text }),
+    });
+    state.conversationId = res.conversation_id;
+    localStorage.setItem("aion_conversation_id_" + state.companyId, state.conversationId);
+    el("chat-subtitle").textContent = "Диалог #" + state.conversationId;
+    await loadMessages();
+    await refreshLive();
+  } catch (e) {
+    showError("Не удалось отправить сообщение: " + e.message);
+  } finally {
+    state.sending = false;
+    el("send-btn").disabled = false;
+  }
+}
+
+function newChat() {
+  state.conversationId = null;
+  state.messages = [];
+  localStorage.removeItem("aion_conversation_id_" + state.companyId);
+  el("chat-subtitle").textContent = "Новый диалог";
+  renderMessages();
+}
+
+function autoResize(t) { t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 140) + "px"; }
+
+/* ---------- Access / whitelist ---------- */
+async function loadWhitelist() {
+  const select = el("whitelist-company");
+  if (state.companies.length && select.options.length === 0) {
+    select.innerHTML = state.companies.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
+    if (state.me) select.value = state.me.company_id;
+  }
+  state.whitelist = await api("/auth/whitelist");
+  renderWhitelist();
+}
+
+function renderWhitelist() {
+  const list = el("whitelist-list");
+  if (state.whitelist.length === 0) {
+    list.innerHTML = '<div class="empty-hint">Список пуст</div>';
+    return;
+  }
+  list.innerHTML = "";
+  state.whitelist.forEach((w) => {
+    const row = document.createElement("div");
+    row.className = "whitelist-row";
+    row.innerHTML = `<span>${escapeHtml(w.email)}</span><button data-id="${w.id}">Удалить</button>`;
+    row.querySelector("button").addEventListener("click", () => removeWhitelistEntry(w.id));
+    list.appendChild(row);
+  });
+}
+
+async function removeWhitelistEntry(id) {
+  try {
+    await api(`/auth/whitelist/${id}`, { method: "DELETE" });
+    await loadWhitelist();
+  } catch (e) {
+    showError("Не удалось удалить: " + e.message);
+  }
+}
+
+el("whitelist-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = el("whitelist-email").value.trim();
+  const full_name = el("whitelist-name").value.trim();
+  const company_id = Number(el("whitelist-company").value);
+  const role_id = Number(el("whitelist-role").value);
+  if (!email || !full_name || !company_id) return;
+  try {
+    const res = await api("/auth/whitelist", { method: "POST", body: JSON.stringify({ email, full_name, company_id, role_id }) });
+    el("whitelist-form").reset();
+    const banner = el("whitelist-created");
+    if (res.generated_password) {
+      banner.innerHTML = `Аккаунт создан. Пароль (покажется только сейчас, передай человеку): <span class="pw">${escapeHtml(res.generated_password)}</span>`;
+    } else {
+      banner.textContent = `Email добавлен в белый список — аккаунт с таким email уже существовал, пароль не менялся.`;
+    }
+    banner.classList.remove("hidden");
+    await loadWhitelist();
+  } catch (err) {
+    showError("Не удалось добавить: " + err.message);
+  }
+});
+
+/* ---------- Auth ---------- */
+async function doLogin() {
+  const email = el("login-email").value.trim();
+  const password = el("login-password").value;
+  if (!email || !password) return;
+  el("login-btn").disabled = true;
+  try {
+    const res = await api("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
+    state.token = res.access_token;
+    localStorage.setItem("aion_token", state.token);
+    await boot();
+  } catch (e) {
+    showLogin(e.message || "Неверный email или пароль");
+  } finally {
+    el("login-btn").disabled = false;
+  }
+}
+
+el("login-btn").addEventListener("click", doLogin);
+el("login-password").addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
+el("logout-btn").addEventListener("click", logout);
+
+/* ---------- Data loading ---------- */
+async function loadAgents() {
+  if (!state.companyId) return;
+  const all = await api("/agents/");
+  const filtered = all.filter(a => a.company_id === state.companyId);
+  state.agents = filtered;
+  renderOfficeScene();
+  detectStatusChanges(filtered);
+  renderStats();
+}
+
+async function loadTasks() {
+  if (!state.companyId) return;
+  const all = await api("/tasks/");
+  state.tasks = all.filter(t => t.company_id === state.companyId);
+  renderStats();
+  renderActivity();
+}
+
+async function refreshLive() {
+  if (!state.token) return;
+  await loadAgents();
+  await loadTasks();
+  if (state.currentPage === "team") renderTeamList();
+  if (state.conversationId && state.chatOpen) await loadMessages();
+}
+
+async function selectCompany(companyId) {
+  const company = state.companies.find(c => c.id === companyId);
+  if (!company) return;
+
+  state.companyId = company.id;
+  state.companyName = company.name;
+  state.conversationId = localStorage.getItem("aion_conversation_id_" + companyId) || null;
+  state.messages = [];
+  state.tasks = [];
+  state.prevStatus = {};
+  state.statusLoadedOnce = false;
+  state.officeDeskEls = {};
+  Object.values(state.officeParked).forEach(w => w.remove());
+  state.officeParked = {};
+  localStorage.setItem("aion_last_company_id", companyId);
+  el("brand-tag").textContent = company.name;
+
+  try {
+    const users = await api("/users/");
+    const companyUsers = users.filter(u => u.company_id === state.companyId);
+    if (companyUsers.length === 0) {
+      showError("В компании «" + company.name + "» нет пользователей — создай через /docs");
+      state.userId = null;
+      return;
+    }
+    const asMe = state.me && companyUsers.find(u => u.id === state.me.id);
+    state.userId = asMe ? asMe.id : companyUsers[0].id;
+
+    await loadAgents();
+    await loadTasks();
+    renderTeamList();
+
+    if (state.conversationId) {
+      el("chat-subtitle").textContent = "Диалог #" + state.conversationId;
+      await loadMessages();
+    } else {
+      el("chat-subtitle").textContent = "Новый диалог";
+      renderMessages();
+    }
+  } catch (e) {
+    showError("Ошибка загрузки: " + e.message);
+  }
+}
+
+function tickClock() {
+  el("topbar-date").textContent = new Date().toLocaleString([], { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+async function boot() {
+  hideLogin();
+
+  try {
+    state.me = await api("/auth/me");
+  } catch (e) {
+    return;
+  }
+  el("user-who").textContent = `${state.me.full_name} · ${state.me.email}`;
+  el("nav-access").classList.toggle("hidden", !state.me.is_admin);
+
+  if (!state.booted) {
+    state.booted = true;
+    tickClock();
+    setInterval(tickClock, 30000);
+    setInterval(() => refreshLive().catch(() => {}), 3500);
+  }
+
+  try {
+    const companies = await api("/companies/");
+    if (companies.length === 0) {
+      showError("Нет ни одной компании — создай её через /companies/ в Swagger (/docs)");
+      return;
+    }
+    state.companies = companies;
+
+    const select = el("company-select");
+    select.innerHTML = companies.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
+    select.addEventListener("change", () => selectCompany(Number(select.value)));
+
+    const saved = Number(localStorage.getItem("aion_last_company_id"));
+    const myCompanyId = state.me ? state.me.company_id : null;
+    const initial = companies.find(c => c.id === saved)
+      ? saved
+      : (companies.find(c => c.id === myCompanyId) ? myCompanyId : companies[companies.length - 1].id);
+    select.value = initial;
+
+    await selectCompany(initial);
+  } catch (e) {
+    showError("Ошибка загрузки: " + e.message);
+  }
+}
+
+function init() {
+  if (state.token) {
+    boot();
+  } else {
+    showLogin();
+  }
+}
+
+el("send-btn").addEventListener("click", sendMessage);
+el("message-input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+el("message-input").addEventListener("input", (e) => autoResize(e.target));
+el("create-agent-btn").addEventListener("click", createAgent);
+
+init();
+</script>
+</body>
+</html>

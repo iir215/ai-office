@@ -42,3 +42,6 @@ node_modules/
 
 # Docker
 *.pid
+
+# Test artifacts
+backend/test_gen.png

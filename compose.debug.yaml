@@ -1,6 +1,0 @@
-services:
-  aioffice:
-    image: aioffice
-    build:
-      context: .
-      dockerfile: ./Dockerfile
