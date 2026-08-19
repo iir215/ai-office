@@ -298,6 +298,28 @@
     opacity: .5;
   }
 
+  .office-tooltip {
+    position: fixed;
+    z-index: 70;
+    width: 220px;
+    background: var(--ink);
+    color: #fff;
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-size: 12px;
+    line-height: 1.5;
+    box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity .12s ease, transform .12s ease;
+  }
+  .office-tooltip.show { opacity: 1; transform: translateY(0); }
+  .office-tooltip .tt-name { font-weight: 800; font-size: 13px; margin-bottom: 2px; }
+  .office-tooltip .tt-status { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #ffffffb0; margin-bottom: 8px; }
+  .office-tooltip .tt-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #ffffff80; margin-bottom: 3px; }
+  .office-tooltip .tt-task { color: #ffffffe0; }
+
   /* Activity feed */
   #activity-card { padding: 6px 0 10px; }
   #activity-card .section-title { padding: 18px 22px 0; }
@@ -822,6 +844,7 @@
   </main>
 </div>
 <div id="fx-layer"></div>
+<div class="office-tooltip" id="office-tooltip"></div>
 
 <script>
 const API = "";
@@ -1004,7 +1027,44 @@ function officeDeskEl(agent, isDirector) {
   if (!isDirector) {
     wrap.addEventListener("click", () => selectMention(agent));
   }
+  wrap.addEventListener("mouseenter", () => showOfficeTooltip(agent, wrap));
+  wrap.addEventListener("mouseleave", hideOfficeTooltip);
   return wrap;
+}
+
+function latestTaskForAgent(agentId) {
+  return state.tasks.find(t => t.assigned_agent_id === agentId) || null;
+}
+
+function showOfficeTooltip(agent, deskEl) {
+  const tip = el("office-tooltip");
+  const task = latestTaskForAgent(agent.id);
+  const statusText = agent.role_type === "director" ? "Директор" : (STATUS_LABEL[agent.status] || agent.status);
+
+  let taskHtml;
+  if (task) {
+    const verb = task.status === "done" ? "Последняя задача" : task.status === "failed" ? "Не удалось" : "Сейчас делает";
+    taskHtml = `<div class="tt-label">${verb}</div><div class="tt-task">${escapeHtml(task.instructions)}</div>`;
+  } else {
+    taskHtml = `<div class="tt-task">Задач пока не было</div>`;
+  }
+
+  tip.innerHTML = `<div class="tt-name">${escapeHtml(agent.name)}</div><div class="tt-status">${escapeHtml(statusText)}</div>${taskHtml}`;
+
+  const r = deskEl.getBoundingClientRect();
+  tip.style.left = Math.max(8, Math.min(window.innerWidth - 228, r.left + r.width / 2 - 110)) + "px";
+  if (r.top < 140) {
+    tip.style.top = (r.bottom + 8) + "px";
+    tip.style.bottom = "";
+  } else {
+    tip.style.bottom = (window.innerHeight - r.top + 8) + "px";
+    tip.style.top = "";
+  }
+  tip.classList.add("show");
+}
+
+function hideOfficeTooltip() {
+  el("office-tooltip").classList.remove("show");
 }
 
 function renderOfficeScene() {
