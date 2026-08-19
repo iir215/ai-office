@@ -1066,10 +1066,10 @@ function renderOfficeScene() {
   }
 }
 
-function officeMoveWalker(walker, toEl) {
+function officeMoveWalker(walker, toEl, offsetX = 0) {
   if (!toEl) return;
   const b = toEl.getBoundingClientRect();
-  const dx = (b.left + b.width / 2) - Number(walker.dataset.baseLeft);
+  const dx = (b.left + b.width / 2) - Number(walker.dataset.baseLeft) + offsetX;
   const dy = (b.top + b.height / 2) - Number(walker.dataset.baseTop);
   requestAnimationFrame(() => {
     walker.style.transform = `translate(${dx}px, ${dy}px)`;
@@ -1102,7 +1102,9 @@ function officeWalkToDirector(agent) {
 
   deskEl.classList.add("away");
   const walker = officeSpawnWalker(avatarEl, colorForName(agent.name), initials(agent.name));
-  officeMoveWalker(walker, dirAvatarEl);
+  const slot = Object.keys(state.officeParked).length;
+  const offsetX = (slot % 2 === 0 ? 1 : -1) * Math.ceil((slot + 1) / 2) * 30;
+  officeMoveWalker(walker, dirAvatarEl, offsetX);
   state.officeParked[agent.id] = walker;
 }
 
