@@ -24,9 +24,9 @@ def generate_reply(agent: Agent, context_type: str, text: str, author: str) -> s
             {
                 "role": "user",
                 "content": (
-                    f"Клиент оставил {context_type} в Instagram QARS.\n"
+                    f"Клиент оставил {context_type} в Instagram Bonch Burgers.\n"
                     f"От: {author}\nТекст: {text}\n\n"
-                    "Напиши короткий, дружелюбный ответ от лица QARS."
+                    "Напиши короткий, дружелюбный ответ от лица Bonch Burgers."
                 ),
             },
         ],
