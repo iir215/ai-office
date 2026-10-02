@@ -37,7 +37,7 @@ def generate_instagram_post(agent_id: int, company_id: int, topic: str) -> None:
             caption = caption_response.choices[0].message.content or topic
 
             image_prompt = (
-                f"Аппетитная фотография для Instagram уличного стрит-фастфуда QARS на тему: {topic}. "
+                f"Аппетитная фотография для Instagram уличного стрит-фастфуда Bonch Burgers на тему: {topic}. "
                 "Фотореалистично, яркое освещение, крупный план, аппетитно."
             )
             image_url = generate_and_host_image(image_prompt)
