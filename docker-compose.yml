@@ -5,11 +5,15 @@ services:
     build: ./backend
     container_name: aion_api
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     env_file:
       - ./backend/.env
     volumes:
     - ./backend/alembic:/app/alembic
+    - ./backend/employee_photos:/app/app/employee_photos
+    - ./backend/employee_sightings:/app/app/employee_sightings
+    - ./backend/app/static:/app/app/static
+    - ./backend/camera_frames:/app/app/camera_frames
     depends_on:
       - postgres
       - redis
@@ -20,6 +24,8 @@ services:
     env_file:
       - ./backend/.env
     command: sh -c "rq worker agent_tasks --url $${REDIS_URL}"
+    volumes:
+    - ./backend/app/static:/app/app/static
     depends_on:
       - postgres
       - redis
@@ -35,6 +41,7 @@ services:
     depends_on:
       - postgres
       - redis
+    restart: unless-stopped
 
   security_auditor:
     build: ./backend

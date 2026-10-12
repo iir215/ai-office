@@ -39,6 +39,11 @@ class PendingPost(BaseModel):
         default="pending",
     )
 
+    media_type: Mapped[str] = mapped_column(
+        String(20),
+        default="IMAGE",
+    )
+
     notified_messages: Mapped[Optional[str]] = mapped_column(
         Text,
         nullable=True,

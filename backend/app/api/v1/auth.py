@@ -12,6 +12,7 @@ from app.models.company import Company
 from app.models.role import Role
 from app.models.user import User
 from app.schemas.auth import LoginRequest, MeResponse, TokenResponse, WhitelistCreate, WhitelistResponse
+from app.services.email import send_email
 
 router = APIRouter(
     prefix="/auth",
@@ -100,6 +101,22 @@ def add_to_whitelist(
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=400, detail="Не удалось добавить email")
+
+    if generated_password:
+        try:
+            send_email(
+                to=data.email,
+                subject="Доступ к AION",
+                body=(
+                    f"Здравствуйте, {data.full_name}!\n\n"
+                    f"Вам открыт доступ к системе AION.\n"
+                    f"Email: {data.email}\n"
+                    f"Пароль: {generated_password}\n\n"
+                    "После входа рекомендуем сменить пароль."
+                ),
+            )
+        except Exception:
+            pass
 
     return WhitelistResponse(
         id=entry.id,

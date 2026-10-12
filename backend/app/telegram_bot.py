@@ -13,7 +13,8 @@ from app.models.invite import Invite
 from app.models.pending_post import PendingPost
 from app.models.user import User
 from app.services.director import get_or_create_conversation, handle_user_message
-from app.services.instagram import get_permalink, publish_media
+from app.services.instagram import get_permalink, publish_pending
+from app.services.media_library import delete_asset, list_assets, rename_asset, save_photo
 from app.services.telegram import answer_callback_query, edit_message, notify_company, send_message
 
 API_URL = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}"
@@ -32,6 +33,8 @@ active_interlocutor: dict[int, str] = {}
 active_conversations: dict[tuple[int, int], int] = {}
 pending_agent_creation: dict[int, dict] = {}
 menu_state: dict[int, str] = {}
+# Albums arrive as separate messages sharing a media_group_id; only the first carries the caption.
+album_captions: dict[str, str] = {}
 
 
 def get_updates(offset: int) -> list[dict]:
@@ -42,6 +45,19 @@ def get_updates(offset: int) -> list[dict]:
     )
     resp.raise_for_status()
     return resp.json().get("result", [])
+
+
+def download_telegram_file(file_id: str) -> bytes:
+    # Errors are re-raised without the URL: it contains the bot token.
+    try:
+        info = httpx.get(f"{API_URL}/getFile", params={"file_id": file_id}, timeout=30)
+        info.raise_for_status()
+        file_path = info.json()["result"]["file_path"]
+        resp = httpx.get(f"https://api.telegram.org/file/bot{settings.TELEGRAM_BOT_TOKEN}/{file_path}", timeout=60)
+        resp.raise_for_status()
+        return resp.content
+    except Exception as exc:
+        raise RuntimeError(f"не удалось скачать файл из Telegram ({type(exc).__name__})") from None
 
 
 def get_linked_users(db, chat_id: int) -> list[User]:
@@ -194,10 +210,16 @@ def handle_callback(db, callback: dict) -> None:
 
     if action == "post_approve":
         try:
-            media_id = publish_media(pending.instagram_container_id)
+            media_id = publish_pending(
+                pending.company_id,
+                pending.media_type,
+                pending.image_url,
+                pending.caption,
+                pending.instagram_container_id,
+            )
             pending.status = "published"
             db.commit()
-            permalink = get_permalink(media_id)
+            permalink = get_permalink(pending.company_id, media_id)
             answer_callback_query(callback_id, "Опубликовано!")
             result_line = f"✅ Опубликовано: {permalink}"
         except Exception as exc:
@@ -214,8 +236,10 @@ def handle_callback(db, callback: dict) -> None:
         answer_callback_query(callback_id)
         return
 
+    is_video = pending.media_type == "REELS"
     final_text = (
-        f"📸 Пост:\n\n{pending.caption}\n\nФото: {pending.image_url}\n\n{result_line}"
+        f"{'🎬' if is_video else '📸'} Пост:\n\n{pending.caption}\n\n"
+        f"{'Видео' if is_video else 'Фото'}: {pending.image_url}\n\n{result_line}"
     )
 
     for item in json.loads(pending.notified_messages or "[]"):
@@ -223,6 +247,71 @@ def handle_callback(db, callback: dict) -> None:
             edit_message(item["chat_id"], item["message_id"], final_text)
         except Exception:
             pass
+
+
+def handle_photo(db, chat_id: int, message: dict) -> None:
+    user = get_active_user(db, chat_id)
+    if not user:
+        send_message(chat_id, "Этот Telegram-аккаунт пока не привязан ни к одной компании в системе.")
+        return
+
+    if message.get("photo"):
+        file_id = max(message["photo"], key=lambda p: p.get("file_size") or p["width"] * p["height"])["file_id"]
+    else:
+        file_id = message["document"]["file_id"]
+
+    caption = (message.get("caption") or "").strip()
+    group = message.get("media_group_id")
+    if group:
+        if caption:
+            album_captions[group] = caption
+        else:
+            caption = album_captions.get(group, "")
+        if len(album_captions) > 200:
+            album_captions.clear()
+
+    asset = save_photo(db, user.company_id, download_telegram_file(file_id), caption)
+    total = len(list_assets(db, user.company_id))
+    if caption:
+        note = f"📷 Сохранил в библиотеку «{asset.label}» (№{asset.id}). Всего фото у «{user.company.name}»: {total}."
+    else:
+        note = (
+            f"📷 Сохранил как «{asset.label}» (№{asset.id}). Всего фото: {total}.\n"
+            f"Чтобы назвать: /name {asset.id} фудтрак. Фото с подписью сохраняются сразу с названием."
+        )
+    send_message(chat_id, note, main_keyboard(chat_id))
+
+
+def handle_photo_command(db, chat_id: int, user: User, text: str) -> bool:
+    """/photos, /name <id> <label>, /delphoto <id>. Returns True when handled."""
+    if text == "/photos":
+        assets = list_assets(db, user.company_id)
+        if not assets:
+            send_message(chat_id, "Библиотека фото пуста. Отправь фото боту (лучше с подписью: что на нём).", main_keyboard(chat_id))
+        else:
+            lines = [f"№{a.id} — {a.label}" for a in assets]
+            send_message(chat_id, f"Фото «{user.company.name}»:\n" + "\n".join(lines), main_keyboard(chat_id))
+        return True
+
+    if text.startswith("/name"):
+        parts = text.split(maxsplit=2)
+        if len(parts) < 3 or not parts[1].isdigit():
+            send_message(chat_id, "Формат: /name 5 фудтрак", main_keyboard(chat_id))
+        else:
+            asset = rename_asset(db, user.company_id, int(parts[1]), parts[2])
+            send_message(chat_id, f"Теперь №{asset.id} называется «{asset.label}»." if asset else "Такого фото нет.", main_keyboard(chat_id))
+        return True
+
+    if text.startswith("/delphoto"):
+        parts = text.split()
+        if len(parts) != 2 or not parts[1].isdigit():
+            send_message(chat_id, "Формат: /delphoto 5", main_keyboard(chat_id))
+        else:
+            ok = delete_asset(db, user.company_id, int(parts[1]))
+            send_message(chat_id, "Фото удалено." if ok else "Такого фото нет.", main_keyboard(chat_id))
+        return True
+
+    return False
 
 
 def handle_message(db, chat_id: int, text: str, from_user: dict | None = None) -> None:
@@ -284,6 +373,9 @@ def handle_message(db, chat_id: int, text: str, from_user: dict | None = None) -
         send_message(chat_id, f"Теперь говоришь с: {text}", main_keyboard(chat_id))
         return
 
+    if handle_photo_command(db, chat_id, user, text):
+        return
+
     if text == BTN_NEW_CHAT or text == "/newchat":
         active_conversations.pop((chat_id, user.company_id), None)
         send_message(chat_id, "Начинаем новый диалог с Director.", main_keyboard(chat_id))
@@ -336,7 +428,7 @@ def main() -> None:
         try:
             updates = get_updates(offset)
         except Exception as exc:
-            print(f"getUpdates failed: {exc}")
+            print(f"getUpdates failed: {type(exc).__name__}")
             time.sleep(3)
             continue
 
@@ -355,7 +447,21 @@ def main() -> None:
                 continue
 
             message = update.get("message")
-            if not message or "text" not in message:
+            if not message:
+                continue
+
+            document = message.get("document") or {}
+            if message.get("photo") or (document.get("mime_type") or "").startswith("image/"):
+                db = SessionLocal()
+                try:
+                    handle_photo(db, message["chat"]["id"], message)
+                except Exception as exc:
+                    send_message(message["chat"]["id"], f"Не удалось сохранить фото: {exc}")
+                finally:
+                    db.close()
+                continue
+
+            if "text" not in message:
                 continue
 
             chat_id = message["chat"]["id"]

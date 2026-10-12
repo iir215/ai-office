@@ -11,8 +11,10 @@ from app.models.message import Message
 from app.models.role import Role
 from app.models.task import Task
 from app.services.openai_client import client
+from app.services.instagram_accounts import has_account
+from app.services.media_library import MAX_REFERENCES, get_assets, list_assets
 from app.services.queue import task_queue
-from app.workers.instagram_jobs import generate_instagram_post
+from app.workers.instagram_jobs import generate_instagram_post, generate_instagram_video_post
 from app.workers.tasks import run_agent_task
 
 
@@ -24,11 +26,48 @@ DIRECTOR_SYSTEM_PROMPT = (
     "the delegate_task tool instead of doing the work yourself. Use "
     "list_agents to see which workers are available before delegating. "
     "Use grant_telegram_access when the owner wants to give someone access "
-    "to this company's bot by their Telegram username. Use "
-    "create_instagram_post when the owner asks to create or publish "
-    "Instagram content — the agent capable of it will generate an image "
-    "and caption and send them to the owner for approval before anything "
-    "is actually published."
+    "to this company's bot by their Telegram username. For Instagram "
+    "content requests, first decide photo vs video: if the owner's wording "
+    "mentions a video/clip/Reel — in Russian this includes 'ролик', "
+    "'видео', 'видеопост', 'рилс', 'reels', or similar — treat it as a "
+    "video request, NOT create_instagram_post. create_instagram_post is "
+    "only for a still image/photo post (Russian: 'фото', 'картинка', "
+    "'изображение', or no media type mentioned at all) — call it right "
+    "away, no scenario step needed. "
+    "\n\n"
+    "For a VIDEO request, video generation costs real money per attempt, "
+    "so never call create_instagram_video_post right away. Instead: first "
+    "write a short scenario in the chat as plain text (2-4 sentences, in "
+    "Russian, human-readable — what's shown, the mood/lighting, camera "
+    "movement, and what the audio/soundscape should sound like) and ask "
+    "the owner to confirm it. Do not call any tool in that turn. Only "
+    "after the owner clearly approves (да, ок, давай, подходит, or "
+    "similar) call create_instagram_video_post, passing the exact "
+    "approved scenario text as the topic argument so generation matches "
+    "what was agreed. If the owner asks for changes, revise the scenario "
+    "text and ask again before generating anything. "
+    "\n\n"
+    "create_instagram_post generates an image and caption; "
+    "create_instagram_video_post generates a short AI video with sound "
+    "and caption and takes noticeably longer. Both send the result to the "
+    "owner for approval and NEVER publish automatically."
+)
+
+# Appended to every Director's stored prompt at request time (the stored prompt
+# is per company in the DB and would not pick up code changes otherwise).
+PHOTO_LIBRARY_RULES = (
+    "PHOTOS OF THE REAL BUSINESS. The owner keeps a photo library "
+    "(food truck, premises, dishes) that he fills by sending photos to this "
+    "bot in Telegram with a caption. Whenever a video (or any content) is "
+    "about the real truck/venue/dishes, or the owner mentions photos, FIRST "
+    "call list_media. If suitable photos exist, use them: put their ids in "
+    "reference_media_ids when calling create_instagram_video_post, and say in "
+    "the scenario which photos are used and that the real truck/venue from "
+    "them will appear. If suitable photos do not exist, DO NOT invent the "
+    "venue: ask the owner to send photos to this bot in Telegram (with a "
+    "caption saying what is on them, e.g. 'фудтрак') and to tell you when "
+    "done. Never claim that you cannot save photos: the bot saves every photo "
+    "the owner sends into the library."
 )
 
 MAX_TOOL_ROUNDS = 5
@@ -98,6 +137,36 @@ TOOLS = [
                     "topic": {
                         "type": "string",
                         "description": "What the post should be about.",
+                    },
+                },
+                "required": ["topic"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_media",
+            "description": "List the owner's photo library for this company (id and label of each photo: food truck, premises, dishes, ...).",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "create_instagram_video_post",
+            "description": "Have the agent capable of Instagram publishing generate a short AI video (Reels) with sound and a caption. Costs real money per generation and takes several minutes — only call this AFTER the owner has explicitly approved a scenario you proposed to them in chat. It is sent to the owner for approval and is NOT published automatically.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "topic": {
+                        "type": "string",
+                        "description": "The exact scenario text the owner already approved in chat (not just a short topic).",
+                    },
+                    "reference_media_ids": {
+                        "type": "array",
+                        "items": {"type": "integer"},
+                        "description": "Ids from list_media of the photos that must appear in the video (up to 9). Use them whenever the video shows the real truck, venue or dishes.",
                     },
                 },
                 "required": ["topic"],
@@ -266,11 +335,74 @@ def _create_instagram_post(db: Session, conversation: Conversation, topic: str) 
     if not agent:
         return "No agent with Instagram publishing capability is configured for this company."
 
+    if not has_account(conversation.company_id):
+        return (
+            "Instagram publishing is not set up for this company (no Instagram account is "
+            "connected). Tell the owner; do not try to work around it with delegate_task."
+        )
+
     task_queue.enqueue(generate_instagram_post, agent.id, conversation.company_id, topic)
 
     return (
         f"{agent.name} is generating the post now and will send it to the owner "
         "on Telegram for approval before publishing."
+    )
+
+
+def _list_media(db: Session, company_id: int) -> str:
+    assets = list_assets(db, company_id)
+    if not assets:
+        return "The photo library is empty: the owner has not sent any photos yet."
+    return "\n".join(f"id={a.id}: {a.label}" for a in assets)
+
+
+def _create_instagram_video_post(
+    db: Session,
+    conversation: Conversation,
+    topic: str,
+    reference_media_ids: list[int] | None = None,
+) -> str:
+    agent = (
+        db.query(Agent)
+        .filter(Agent.company_id == conversation.company_id)
+        .filter(Agent.can_publish_instagram.is_(True))
+        .filter(Agent.is_active.is_(True))
+        .first()
+    )
+
+    if not agent:
+        return "No agent with Instagram publishing capability is configured for this company."
+
+    if not has_account(conversation.company_id):
+        return (
+            "Instagram publishing is not set up for this company (no Instagram account is "
+            "connected). Tell the owner; do not try to work around it with delegate_task."
+        )
+
+    media_ids: list[int] = []
+    if reference_media_ids:
+        wanted = [int(i) for i in reference_media_ids]
+        found = get_assets(db, conversation.company_id, wanted)
+        if len(found) != len(set(wanted)):
+            return (
+                "Some of those photo ids are not in this company's library. Call list_media "
+                f"and use only ids it returns (at most {MAX_REFERENCES})."
+            )
+        media_ids = [a.id for a in found]
+
+    task_queue.enqueue(
+        generate_instagram_video_post,
+        agent.id,
+        conversation.company_id,
+        topic,
+        reference_media_ids=media_ids or None,
+        job_timeout=1200,
+    )
+
+    used = f" using {len(media_ids)} reference photo(s)" if media_ids else ""
+    return (
+        f"{agent.name} is generating the video now{used} (this takes a few minutes) and will "
+        "send it to the owner on Telegram for approval before publishing."
     )
 
 
@@ -307,7 +439,7 @@ def handle_user_message(db: Session, conversation: Conversation, text: str) -> s
     db.commit()
 
     messages = [
-        {"role": "system", "content": director.system_prompt},
+        {"role": "system", "content": f"{director.system_prompt}\n\n{PHOTO_LIBRARY_RULES}"},
         *_build_history(db, conversation),
     ]
 
@@ -353,6 +485,15 @@ def handle_user_message(db: Session, conversation: Conversation, text: str) -> s
                     db,
                     conversation,
                     args.get("topic", ""),
+                )
+            elif tool_call.function.name == "list_media":
+                result = _list_media(db, conversation.company_id)
+            elif tool_call.function.name == "create_instagram_video_post":
+                result = _create_instagram_video_post(
+                    db,
+                    conversation,
+                    args.get("topic", ""),
+                    args.get("reference_media_ids"),
                 )
             else:
                 result = f"Unknown tool: {tool_call.function.name}"

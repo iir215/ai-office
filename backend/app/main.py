@@ -56,6 +56,22 @@ from app.api.v1.tasks import router as tasks_router
 
 app.include_router(tasks_router, dependencies=protected)
 
+from app.api.v1.employees import router as employees_router
+
+app.include_router(employees_router, dependencies=protected)
+
+from app.api.v1.cameras import router as cameras_router
+
+app.include_router(cameras_router, dependencies=protected)
+
+from app.api.v1.cameras import stream_router as cameras_stream_router
+
+app.include_router(cameras_stream_router)
+
+from app.api.v1.instagram_oauth import router as instagram_oauth_router
+
+app.include_router(instagram_oauth_router)
+
 from fastapi.staticfiles import StaticFiles
 
 app.mount("/ui", StaticFiles(directory="app/static", html=True), name="ui")

@@ -27,6 +27,8 @@ class Settings(BaseSettings):
 
     INSTAGRAM_APP_SECRET: str = ""
 
+    INSTAGRAM_APP_ID: str = "1578528073633315"
+
     INSTAGRAM_SUPPORT_POLL_INTERVAL_SECONDS: int = 300
 
     JWT_SECRET_KEY: str = ""
@@ -34,6 +36,22 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
 
     JWT_EXPIRE_MINUTES: int = 60 * 24 * 7
+
+    SMTP_HOST: str = ""
+
+    SMTP_PORT: int = 587
+
+    SMTP_USER: str = ""
+
+    SMTP_PASSWORD: str = ""
+
+    SMTP_FROM: str = "info@aionbusiness.uz"
+
+    BRAVE_SEARCH_API_KEY: str = ""
+
+    MINIMAX_API_KEY: str = ""
+
+    PUBLIC_BASE_URL: str = "https://aionbusiness.uz"
 
     model_config = SettingsConfigDict(
         env_file=".env",

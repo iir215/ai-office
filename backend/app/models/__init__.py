@@ -8,3 +8,9 @@ from app.models.task import Task
 from app.models.invite import Invite
 from app.models.pending_post import PendingPost
 from app.models.allowed_email import AllowedEmail
+from app.models.instagram_interaction import InstagramInteractionState
+from app.models.instagram_account import InstagramAccount
+from app.models.employee import Employee
+from app.models.employee_sighting import EmployeeSighting
+from app.models.camera import Camera
+from app.models.media_asset import MediaAsset

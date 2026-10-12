@@ -256,6 +256,9 @@
   .office-walker { position:fixed; z-index:55; width:35px; height:58px; pointer-events:none; transition:transform 1.3s cubic-bezier(.45,0,.18,1),opacity .3s ease; }
   .office-walker .office-character { position:relative; bottom:auto; left:auto; animation:officeWalk .28s ease-in-out infinite alternate; }
   @keyframes officeWalk { to { transform:translateY(-3px) rotate(2deg); } }
+  .office-title { display: flex; align-items: center; gap: 12px; }
+  #office-logo { height: 28px; width: auto; display: block; }
+  #office-logo[hidden] { display: none; }
   .office-brand {
     position: absolute;
     bottom: 4px; right: 4px;
@@ -658,6 +661,238 @@
     cursor: pointer;
     padding: 4px 8px;
   }
+  .employee-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    max-width: 420px;
+    margin-bottom: 8px;
+  }
+  .employee-row img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+  .employee-row .info { flex: 1; }
+  .employee-row .info .name { font-size: 13.5px; font-weight: 600; }
+  .employee-row .info .role { font-size: 12px; color: var(--ink-soft); }
+  .employee-row button {
+    border: none;
+    background: none;
+    color: var(--err);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+  #employee-form-card { padding: 18px 20px; max-width: 420px; margin-top: 18px; }
+  #employee-form input {
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+  }
+  .employee-row { cursor: pointer; }
+  .employee-row:hover { border-color: var(--accent); }
+  #employee-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #employee-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(20, 23, 28, 0.45);
+  }
+  #employee-modal-card {
+    position: relative;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    width: min(560px, 92vw);
+    max-height: 82vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  }
+  #employee-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  #employee-modal-name { font-size: 16px; font-weight: 700; }
+  #employee-modal-role { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+  #employee-modal-close {
+    border: none;
+    background: none;
+    font-size: 16px;
+    cursor: pointer;
+    color: var(--ink-soft);
+    padding: 4px 8px;
+  }
+  #employee-modal-body {
+    padding: 16px 20px 20px;
+    overflow-y: auto;
+  }
+  .sighting-row {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .sighting-row:last-child { border-bottom: none; }
+  .sighting-row img {
+    width: 72px;
+    height: 72px;
+    border-radius: var(--radius);
+    object-fit: cover;
+    flex-shrink: 0;
+    background: var(--surface-2);
+    cursor: pointer;
+  }
+  #lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #lightbox-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 12, 16, 0.85);
+  }
+  #lightbox-img {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: var(--radius);
+    box-shadow: 0 20px 60px rgba(0,0,0,.4);
+  }
+  #cameras-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .camera-tile {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    cursor: pointer;
+  }
+  .camera-tile:hover { border-color: var(--accent); }
+  .camera-tile .frame-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: #1a1d23;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .camera-tile .frame-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .camera-tile .frame-wrap .no-signal {
+    color: var(--ink-faint);
+    font-size: 12.5px;
+  }
+  .camera-tile .tile-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+  }
+  .camera-tile .tile-name { font-size: 13.5px; font-weight: 600; }
+  .camera-tile .tile-footer button {
+    border: none;
+    background: none;
+    color: var(--err);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 4px 6px;
+  }
+  #camera-form-card { padding: 18px 20px; max-width: 420px; }
+  #camera-form input { width: 100%; box-sizing: border-box; margin-bottom: 10px; }
+  #camera-viewer {
+    position: fixed;
+    inset: 0;
+    z-index: 250;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #camera-viewer-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 12, 16, 0.85);
+  }
+  #camera-viewer-card {
+    position: relative;
+    background: #101216;
+    border-radius: var(--radius-lg);
+    width: min(1000px, 94vw);
+    box-shadow: 0 20px 60px rgba(0,0,0,.4);
+    overflow: hidden;
+  }
+  #camera-viewer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: #181b21;
+  }
+  #camera-viewer-name { color: #fff; font-size: 14px; font-weight: 600; }
+  #camera-viewer-close {
+    border: none;
+    background: none;
+    color: #c7cbd3;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+  #camera-viewer-sound {
+    border: 1px solid #3a3f4a;
+    background: #23262d;
+    color: #e2e5ea;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 8px;
+  }
+  #camera-viewer-sound.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  #camera-viewer-img {
+    display: block;
+    width: 100%;
+    max-height: 78vh;
+    object-fit: contain;
+    background: #000;
+  }
+  .sighting-row .info { flex: 1; min-width: 0; }
+  .sighting-row .comment { font-size: 13.5px; line-height: 1.4; }
+  .sighting-row .time { font-size: 11.5px; color: var(--ink-faint); margin-top: 4px; }
   #user-footer {
     padding: 12px 16px 16px;
     border-top: 1px solid var(--border);
@@ -696,6 +931,8 @@
       <button class="nav-item active" data-page="dashboard"><span class="dot"></span>Дашборд</button>
       <button class="nav-item" data-page="team"><span class="dot"></span>Команда</button>
       <button class="nav-item hidden" data-page="access" id="nav-access"><span class="dot"></span>Доступ</button>
+      <button class="nav-item hidden" data-page="employees" id="nav-employees"><span class="dot"></span>Сотрудники</button>
+      <button class="nav-item hidden" data-page="cameras" id="nav-cameras"><span class="dot"></span>Камеры</button>
       <button class="nav-item" id="nav-chat-toggle"><span class="dot"></span>Чат с Director</button>
     </nav>
     <div id="sidebar-footer">
@@ -741,7 +978,7 @@
       </div>
 
       <div class="card" id="office-card">
-        <div class="section-title">Офис QARS</div>
+        <div class="section-title office-title"><img id="office-logo" alt="" hidden><span id="office-title-text">Офис Bonch burgers</span></div>
         <div id="office-scene">
           <div class="office-room director-room" id="office-room-director">
             <div class="office-room-label">🧭 Директор</div>
@@ -759,7 +996,7 @@
             <div class="office-room-label">🛟 Поддержка и HR</div>
             <div class="office-desks" id="office-desks-support"></div>
           </div>
-          <div class="office-brand">QARS · AI Office</div>
+          <div class="office-brand" id="office-brand-text">Bonch burgers · AI Office</div>
         </div>
       </div>
 
@@ -820,6 +1057,38 @@
       </div>
     </section>
 
+    <!-- Employees / face database (admin only) -->
+    <section class="page hidden" id="page-employees">
+      <div class="section-title">Сотрудники</div>
+      <div class="empty-hint" style="padding:0 0 14px;">База для распознавания на камерах (Ревизор) — фото, ФИО и должность</div>
+      <div id="employees-list"><div class="empty-hint">Загрузка…</div></div>
+
+      <div class="card" id="employee-form-card">
+        <div class="section-title" style="margin-bottom:12px;">Добавить сотрудника</div>
+        <form id="employee-form">
+          <input id="employee-name" type="text" placeholder="ФИО" required />
+          <input id="employee-role" type="text" placeholder="Должность" required />
+          <input id="employee-photo" type="file" accept="image/jpeg,image/png" required />
+          <button class="btn" type="submit">Добавить сотрудника</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Cameras -->
+    <section class="page hidden" id="page-cameras">
+      <div class="section-title">Камеры</div>
+      <div class="empty-hint" style="padding:0 0 14px;">Live-просмотр с камер точки — обновляется автоматически</div>
+      <div id="cameras-grid"><div class="empty-hint">Загрузка…</div></div>
+
+      <div class="card" id="camera-form-card">
+        <div class="section-title" style="margin-bottom:12px;">Добавить камеру</div>
+        <form id="camera-form">
+          <input id="camera-name" type="text" placeholder="Название (например: Касса, Кухня, Вход)" required />
+          <button class="btn" type="submit">Добавить камеру</button>
+        </form>
+      </div>
+    </section>
+
     <!-- Persistent chat dock -->
     <div id="chat-dock">
       <div id="chat-dock-bar">
@@ -841,6 +1110,42 @@
       </div>
     </div>
   </main>
+
+  <div id="employee-modal" class="hidden">
+    <div id="employee-modal-backdrop"></div>
+    <div id="employee-modal-card">
+      <div id="employee-modal-header">
+        <div>
+          <div id="employee-modal-name">—</div>
+          <div id="employee-modal-role">—</div>
+        </div>
+        <button id="employee-modal-close">✕</button>
+      </div>
+      <div id="employee-modal-body">
+        <div class="empty-hint">Загрузка…</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="lightbox" class="hidden">
+    <div id="lightbox-backdrop"></div>
+    <img id="lightbox-img" alt="" />
+  </div>
+
+  <div id="camera-viewer" class="hidden">
+    <div id="camera-viewer-backdrop"></div>
+    <div id="camera-viewer-card">
+      <div id="camera-viewer-header">
+        <div id="camera-viewer-name">—</div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <button id="camera-viewer-sound">🔇 Включить звук</button>
+          <button id="camera-viewer-close">✕</button>
+        </div>
+      </div>
+      <img id="camera-viewer-img" alt="" />
+      <audio id="camera-viewer-audio"></audio>
+    </div>
+  </div>
 </div>
 <div id="fx-layer"></div>
 <div class="office-tooltip" id="office-tooltip"></div>
@@ -867,6 +1172,8 @@ const state = {
   token: localStorage.getItem("aion_token") || null,
   me: null,
   whitelist: [],
+  employees: [],
+  cameras: [],
 };
 
 const el = (id) => document.getElementById(id);
@@ -959,11 +1266,16 @@ function setPage(page) {
     dashboard: ["Дашборд", "Реальный статус команды и последняя активность"],
     team: ["Команда", "Управление агентами компании"],
     access: ["Доступ", "Белый список email для входа в панель"],
+    employees: ["Сотрудники", "База для распознавания на камерах"],
+    cameras: ["Камеры", "Live-просмотр с камер точки"],
   };
   el("page-title").textContent = titles[page][0];
   el("page-sub").textContent = titles[page][1];
 
   if (page === "access") loadWhitelist().catch((e) => showError("Не удалось загрузить список: " + e.message));
+  if (page === "employees") loadEmployees().catch((e) => showError("Не удалось загрузить сотрудников: " + e.message));
+  if (page === "cameras") loadCameras().catch((e) => showError("Не удалось загрузить камеры: " + e.message));
+  else stopCameraGridRefresh();
 }
 document.querySelectorAll(".nav-item[data-page]").forEach(b => b.addEventListener("click", () => setPage(b.dataset.page)));
 
@@ -1466,6 +1778,296 @@ el("whitelist-form").addEventListener("submit", async (e) => {
   }
 });
 
+/* ---------- Employees / face database ---------- */
+async function loadEmployees() {
+  state.employees = await api("/employees/");
+  renderEmployees();
+}
+
+async function loadEmployeePhoto(id) {
+  const headers = {};
+  if (state.token) headers["Authorization"] = "Bearer " + state.token;
+  const res = await fetch(`/employees/${id}/photo`, { headers });
+  if (!res.ok) return null;
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
+}
+
+function renderEmployees() {
+  const list = el("employees-list");
+  if (state.employees.length === 0) {
+    list.innerHTML = '<div class="empty-hint">Пока никого не добавили</div>';
+    return;
+  }
+  list.innerHTML = "";
+  state.employees.forEach((emp) => {
+    const row = document.createElement("div");
+    row.className = "employee-row";
+    row.innerHTML = `
+      <img alt="" />
+      <div class="info">
+        <div class="name">${escapeHtml(emp.full_name)}</div>
+        <div class="role">${escapeHtml(emp.role)}</div>
+      </div>
+      <button data-id="${emp.id}">Удалить</button>
+    `;
+    row.querySelector("button").addEventListener("click", (e) => { e.stopPropagation(); removeEmployee(emp.id); });
+    row.addEventListener("click", () => openEmployeeModal(emp));
+    const img = row.querySelector("img");
+    loadEmployeePhoto(emp.id).then((url) => { if (url) img.src = url; });
+    list.appendChild(row);
+  });
+}
+
+let employeeModalEmployee = null;
+let employeeModalLatestId = 0;
+let employeeModalPollTimer = null;
+const SIGHTING_POLL_MS = 8000;
+
+function renderSightingRow(emp, s) {
+  const row = document.createElement("div");
+  row.className = "sighting-row";
+  row.innerHTML = `
+    <img alt="" />
+    <div class="info">
+      <div class="comment">${escapeHtml(s.comment)}</div>
+      <div class="time">${fmtDateTime(s.created_at)}</div>
+    </div>
+  `;
+  const headers = {};
+  if (state.token) headers["Authorization"] = "Bearer " + state.token;
+  fetch(`/employees/${emp.id}/sightings/${s.id}/photo`, { headers })
+    .then((r) => (r.ok ? r.blob() : null))
+    .then((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const img = row.querySelector("img");
+      img.src = url;
+      img.addEventListener("click", () => openLightbox(url));
+    });
+  return row;
+}
+
+async function openEmployeeModal(emp) {
+  employeeModalEmployee = emp;
+  employeeModalLatestId = 0;
+  el("employee-modal-name").textContent = emp.full_name;
+  el("employee-modal-role").textContent = emp.role;
+  el("employee-modal-body").innerHTML = '<div class="empty-hint">Загрузка…</div>';
+  el("employee-modal").classList.remove("hidden");
+
+  try {
+    const sightings = await api(`/employees/${emp.id}/sightings`);
+    const body = el("employee-modal-body");
+    if (sightings.length === 0) {
+      body.innerHTML = '<div class="empty-hint">Пока нет снимков с камеры</div>';
+    } else {
+      body.innerHTML = "";
+      sightings.forEach((s) => body.appendChild(renderSightingRow(emp, s)));
+      employeeModalLatestId = Math.max(...sightings.map((s) => s.id));
+    }
+  } catch (e) {
+    el("employee-modal-body").innerHTML = `<div class="empty-hint">Не удалось загрузить: ${escapeHtml(e.message)}</div>`;
+  }
+
+  if (employeeModalPollTimer) clearInterval(employeeModalPollTimer);
+  employeeModalPollTimer = setInterval(pollEmployeeSightings, SIGHTING_POLL_MS);
+}
+
+async function pollEmployeeSightings() {
+  if (!employeeModalEmployee || el("employee-modal").classList.contains("hidden")) return;
+  const emp = employeeModalEmployee;
+  try {
+    const sightings = await api(`/employees/${emp.id}/sightings`);
+    const newOnes = sightings.filter((s) => s.id > employeeModalLatestId).sort((a, b) => a.id - b.id);
+    if (newOnes.length === 0) return;
+
+    const body = el("employee-modal-body");
+    if (body.querySelector(".empty-hint")) body.innerHTML = "";
+    newOnes.reverse().forEach((s) => body.insertBefore(renderSightingRow(emp, s), body.firstChild));
+    employeeModalLatestId = Math.max(employeeModalLatestId, ...sightings.map((s) => s.id));
+  } catch (e) {
+    // silent - keep trying on next tick
+  }
+}
+
+function openLightbox(url) {
+  el("lightbox-img").src = url;
+  el("lightbox").classList.remove("hidden");
+}
+function closeLightbox() {
+  el("lightbox").classList.add("hidden");
+}
+el("lightbox-backdrop").addEventListener("click", closeLightbox);
+el("lightbox-img").addEventListener("click", closeLightbox);
+
+function closeEmployeeModal() {
+  el("employee-modal").classList.add("hidden");
+  if (employeeModalPollTimer) {
+    clearInterval(employeeModalPollTimer);
+    employeeModalPollTimer = null;
+  }
+  employeeModalEmployee = null;
+}
+el("employee-modal-close").addEventListener("click", closeEmployeeModal);
+el("employee-modal-backdrop").addEventListener("click", closeEmployeeModal);
+
+async function removeEmployee(id) {
+  try {
+    const headers = {};
+    if (state.token) headers["Authorization"] = "Bearer " + state.token;
+    const res = await fetch(`/employees/${id}`, { method: "DELETE", headers });
+    if (!res.ok) throw new Error(res.statusText);
+    await loadEmployees();
+  } catch (e) {
+    showError("Не удалось удалить: " + e.message);
+  }
+}
+
+el("employee-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const full_name = el("employee-name").value.trim();
+  const role = el("employee-role").value.trim();
+  const photoInput = el("employee-photo");
+  const photo = photoInput.files[0];
+  if (!full_name || !role || !photo) return;
+  try {
+    const formData = new FormData();
+    formData.append("full_name", full_name);
+    formData.append("role", role);
+    formData.append("photo", photo);
+    const headers = {};
+    if (state.token) headers["Authorization"] = "Bearer " + state.token;
+    const res = await fetch("/employees/", { method: "POST", headers, body: formData });
+    if (!res.ok) {
+      let detail = res.statusText;
+      try { detail = (await res.json()).detail || detail; } catch (err) {}
+      throw new Error(detail);
+    }
+    el("employee-form").reset();
+    await loadEmployees();
+  } catch (err) {
+    showError("Не удалось добавить сотрудника: " + err.message);
+  }
+});
+
+/* ---------- Cameras ---------- */
+function cameraStreamUrl(id) {
+  return `/cameras/${id}/stream?token=${encodeURIComponent(state.token || "")}`;
+}
+
+function cameraAudioUrl(id) {
+  return `/cameras/${id}/audio-stream?token=${encodeURIComponent(state.token || "")}`;
+}
+
+async function loadCameras() {
+  state.cameras = await api("/cameras/");
+  renderCamerasGrid();
+}
+
+function stopCameraGridRefresh() {}
+
+function renderCamerasGrid() {
+  const grid = el("cameras-grid");
+  if (!state.cameras || state.cameras.length === 0) {
+    grid.innerHTML = '<div class="empty-hint">Камер пока нет</div>';
+    return;
+  }
+  grid.innerHTML = "";
+  state.cameras.forEach((cam) => {
+    const tile = document.createElement("div");
+    tile.className = "camera-tile";
+    tile.dataset.cameraId = cam.id;
+    tile.innerHTML = `
+      <div class="frame-wrap"><img src="${cameraStreamUrl(cam.id)}" alt="" onerror="this.style.display='none'" /></div>
+      <div class="tile-footer">
+        <span class="tile-name">${escapeHtml(cam.name)}</span>
+        <button data-id="${cam.id}">Удалить</button>
+      </div>
+    `;
+    tile.querySelector("button").addEventListener("click", (e) => { e.stopPropagation(); removeCamera(cam.id); });
+    tile.addEventListener("click", () => openCameraViewer(cam));
+    grid.appendChild(tile);
+  });
+}
+
+async function removeCamera(id) {
+  try {
+    const headers = {};
+    if (state.token) headers["Authorization"] = "Bearer " + state.token;
+    const res = await fetch(`/cameras/${id}`, { method: "DELETE", headers });
+    if (!res.ok) throw new Error(res.statusText);
+    await loadCameras();
+  } catch (e) {
+    showError("Не удалось удалить камеру: " + e.message);
+  }
+}
+
+let cameraViewerCam = null;
+
+function openCameraViewer(cam) {
+  cameraViewerCam = cam;
+  el("camera-viewer-name").textContent = cam.name;
+  el("camera-viewer-img").src = cameraStreamUrl(cam.id);
+  el("camera-viewer").classList.remove("hidden");
+  const soundBtn = el("camera-viewer-sound");
+  soundBtn.textContent = "🔇 Включить звук";
+  soundBtn.classList.remove("active");
+  const audio = el("camera-viewer-audio");
+  audio.pause();
+  audio.src = "";
+}
+
+function closeCameraViewer() {
+  el("camera-viewer").classList.add("hidden");
+  el("camera-viewer-img").src = "";
+  const audio = el("camera-viewer-audio");
+  audio.pause();
+  audio.src = "";
+  cameraViewerCam = null;
+}
+el("camera-viewer-close").addEventListener("click", closeCameraViewer);
+el("camera-viewer-backdrop").addEventListener("click", closeCameraViewer);
+
+el("camera-viewer-sound").addEventListener("click", () => {
+  if (!cameraViewerCam) return;
+  const audio = el("camera-viewer-audio");
+  const btn = el("camera-viewer-sound");
+  if (audio.paused) {
+    audio.src = cameraAudioUrl(cameraViewerCam.id);
+    audio.play().catch((e) => showError("Не удалось включить звук: " + e.message));
+    btn.textContent = "🔊 Звук включён";
+    btn.classList.add("active");
+  } else {
+    audio.pause();
+    audio.src = "";
+    btn.textContent = "🔇 Включить звук";
+    btn.classList.remove("active");
+  }
+});
+
+el("camera-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const name = el("camera-name").value.trim();
+  if (!name) return;
+  try {
+    const formData = new FormData();
+    formData.append("name", name);
+    const headers = {};
+    if (state.token) headers["Authorization"] = "Bearer " + state.token;
+    const res = await fetch("/cameras/", { method: "POST", headers, body: formData });
+    if (!res.ok) {
+      let detail = res.statusText;
+      try { detail = (await res.json()).detail || detail; } catch (err) {}
+      throw new Error(detail);
+    }
+    el("camera-form").reset();
+    await loadCameras();
+  } catch (err) {
+    showError("Не удалось добавить камеру: " + err.message);
+  }
+});
+
 /* ---------- Auth ---------- */
 async function doLogin() {
   const email = el("login-email").value.trim();
@@ -1515,6 +2117,16 @@ async function refreshLive() {
   if (state.conversationId && state.chatOpen) await loadMessages();
 }
 
+function applyCompanyBrand(company) {
+  el("office-title-text").textContent = "Офис " + company.name;
+  el("office-brand-text").textContent = company.name + " · AI Office";
+  const logo = el("office-logo");
+  logo.hidden = true;
+  logo.onload = () => { logo.hidden = false; };
+  logo.onerror = () => { logo.hidden = true; };
+  logo.src = "/ui/logos/" + company.id + ".png";
+}
+
 async function selectCompany(companyId) {
   const company = state.companies.find(c => c.id === companyId);
   if (!company) return;
@@ -1531,6 +2143,7 @@ async function selectCompany(companyId) {
   state.officeParked = {};
   localStorage.setItem("aion_last_company_id", companyId);
   el("brand-tag").textContent = company.name;
+  applyCompanyBrand(company);
 
   try {
     const users = await api("/users/");
@@ -1573,6 +2186,8 @@ async function boot() {
   }
   el("user-who").textContent = `${state.me.full_name} · ${state.me.email}`;
   el("nav-access").classList.toggle("hidden", !state.me.is_admin);
+  el("nav-employees").classList.toggle("hidden", !state.me.is_admin);
+  el("nav-cameras").classList.toggle("hidden", !state.me.is_admin);
 
   if (!state.booted) {
     state.booted = true;
