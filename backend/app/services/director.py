@@ -1,4 +1,5 @@
 import json
+import os
 
 from sqlalchemy.orm import Session
 
@@ -8,6 +9,7 @@ from app.models.company import Company
 from app.models.conversation import Conversation
 from app.models.invite import Invite
 from app.models.message import Message
+from app.models.pending_post import PendingPost
 from app.models.role import Role
 from app.models.task import Task
 from app.services.openai_client import client
@@ -16,6 +18,9 @@ from app.services.media_library import MAX_REFERENCES, get_assets, list_assets
 from app.services.queue import task_queue
 from app.workers.instagram_jobs import generate_instagram_post, generate_instagram_video_post
 from app.workers.tasks import run_agent_task
+from app.workers.video_edit_jobs import edit_instagram_video_post
+from app.services.instagram import VIDEO_DIR
+from app.services.video_editor import LAYOUTS, probe_duration, scene_cuts
 
 
 DIRECTOR_SYSTEM_PROMPT = (
@@ -55,6 +60,33 @@ DIRECTOR_SYSTEM_PROMPT = (
 
 # Appended to every Director's stored prompt at request time (the stored prompt
 # is per company in the DB and would not pick up code changes otherwise).
+VIDEO_EDIT_RULES = (
+    "EDITING AN EXISTING REEL. You CAN edit finished videos: call "
+    "list_video_posts to find the post (ids, status, caption), then "
+    "edit_instagram_video_post. The edit keeps the first part of the video "
+    "(keep_until_seconds), replaces the rest with a NEW closing scene generated "
+    "from the owner's real photos (reference_media_ids from list_media — "
+    "required), and burns animated text over the ending (headline, info line, "
+    "pills) in a modern font. It costs real money (about $0.65 for the new "
+    "5-second scene) and takes several minutes, so it is two-step: call "
+    "edit_instagram_video_post (it only records the plan), then write the plan "
+    "to the owner in plain Russian text, STOP and wait for his reply, and only "
+    "after he approves call confirm_video_edit. The plan states: which post, how many seconds "
+    "stay, how the new ending looks (camera, light, mood), and the EXACT texts "
+    "in the requested language (e.g. Uzbek in Latin script, using the "
+    "characters ʻ and ʼ for oʻ, gʻ, taʼm). Use only facts from your knowledge "
+    "(address, hours, discounts) for the text; never invent them. Write ALL "
+    "on-screen text in ONE script: for Uzbek use Latin script only (never mix "
+    "with Cyrillic), translate everything including the address, and keep the "
+    "brand's own slogans as the owner formulates them. In the plan state "
+    "keep_until_seconds (pick the point where the original's last scene "
+    "starts; if unsure, ask) and say "
+    "which layout you use: bottom_stack puts all text on the lower part (good "
+    "when the subject fills the upper frame), top_headline puts the headline "
+    "above the subject. The result is sent to the owner for approval and is "
+    "NEVER published automatically. Never say you cannot edit video."
+)
+
 PHOTO_LIBRARY_RULES = (
     "PHOTOS OF THE REAL BUSINESS. The owner keeps a photo library "
     "(food truck, premises, dishes) that he fills by sending photos to this "
@@ -148,6 +180,72 @@ TOOLS = [
         "function": {
             "name": "list_media",
             "description": "List the owner's photo library for this company (id and label of each photo: food truck, premises, dishes, ...).",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_video_posts",
+            "description": "List recent Reels video posts of this company (id, status, date, caption start). Use to find the post the owner means by 'yesterday's video' etc.",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "edit_instagram_video_post",
+            "description": "STEP 1 of 2 for re-cutting an existing Reels video (keep its beginning, replace the ending with a new scene generated from the owner's real photos, overlay animated text). This call only RECORDS the plan: nothing starts and nothing is spent. After it, present the plan and exact texts to the owner, STOP, and wait for his reply; then call confirm_video_edit. The final video goes to the owner for approval and is NOT published automatically.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "source_post_id": {"type": "integer", "description": "Id from list_video_posts."},
+                    "keep_until_seconds": {
+                        "type": "number",
+                        "description": "How many seconds of the original to keep; everything after is replaced by the new ending.",
+                    },
+                    "ending_description": {
+                        "type": "string",
+                        "description": "Approved description of the new closing scene: what is shown, camera movement, light, mood. The real truck/venue from the photos appears in it.",
+                    },
+                    "reference_media_ids": {
+                        "type": "array",
+                        "items": {"type": "integer"},
+                        "description": "Photo ids from list_media (required, up to 9).",
+                    },
+                    "headline": {
+                        "type": "array",
+                        "description": "Big text lines over the ending (1-2 short lines).",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "text": {"type": "string"},
+                                "color": {"type": "string", "enum": ["white", "yellow"]},
+                            },
+                            "required": ["text"],
+                        },
+                    },
+                    "info_line": {"type": "string", "description": "Small line under the headline, e.g. the address."},
+                    "chips": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Short pills at the bottom, e.g. a discount and opening hours. The first is highlighted in yellow.",
+                    },
+                    "layout": {"type": "string", "enum": list(LAYOUTS)},
+                    "caption": {
+                        "type": "string",
+                        "description": "New post caption; omit to keep the original caption.",
+                    },
+                },
+                "required": ["source_post_id", "keep_until_seconds", "ending_description", "reference_media_ids"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "confirm_video_edit",
+            "description": "STEP 2 of 2: start the video edit recorded by edit_instagram_video_post (costs about $0.65). Call it only when the owner has clearly approved the plan in a message he wrote AFTER you presented it; the system rejects the call otherwise.",
             "parameters": {"type": "object", "properties": {}},
         },
     },
@@ -349,6 +447,154 @@ def _create_instagram_post(db: Session, conversation: Conversation, topic: str) 
     )
 
 
+def _local_video_path(url: str) -> str | None:
+    path = os.path.join(VIDEO_DIR, (url or "").rsplit("/", 1)[-1])
+    return path if os.path.exists(path) else None
+
+
+def _list_video_posts(db: Session, company_id: int) -> str:
+    posts = (
+        db.query(PendingPost)
+        .filter(PendingPost.company_id == company_id, PendingPost.media_type == "REELS")
+        .order_by(PendingPost.id.desc())
+        .limit(10)
+        .all()
+    )
+    if not posts:
+        return "No video posts yet."
+    lines = []
+    for i, p in enumerate(posts):
+        line = f"id={p.id} [{p.status}] {p.created_at:%Y-%m-%d %H:%M} UTC: {(p.caption or '')[:70]!r}"
+        if i < 5:  # measuring costs a second or two per video
+            path = _local_video_path(p.image_url)
+            if path:
+                try:
+                    line += f" | duration={probe_duration(path):.1f}s, scenes start at {scene_cuts(path)} s"
+                except Exception:
+                    pass
+        lines.append(line)
+    return "\n".join(lines)
+
+
+# Paid video edits are two-step and enforced here, not only in the prompt: the
+# first call stores a proposal, the second (confirm_video_edit) runs it, and only
+# if the owner has written another message in between. In-memory: a restart just
+# means the Director proposes again.
+_edit_proposals: dict[int, tuple[dict, int]] = {}
+
+
+def _owner_message_count(db: Session, conversation: Conversation) -> int:
+    return (
+        db.query(Message)
+        .filter(Message.conversation_id == conversation.id, Message.sender_type == "user")
+        .count()
+    )
+
+
+def _edit_instagram_video_post(db: Session, conversation: Conversation, args: dict, confirm: bool = False) -> str:
+    if confirm:
+        proposal = _edit_proposals.get(conversation.id)
+        if not proposal:
+            return (
+                "There is no pending video-edit proposal. Call edit_instagram_video_post with the "
+                "plan first, present it to the owner and wait for his approval."
+            )
+        args, proposed_at = proposal
+        if _owner_message_count(db, conversation) <= proposed_at:
+            return (
+                "The owner has not answered yet. Present the plan and the exact texts to the owner now "
+                "and STOP; call confirm_video_edit only after he approves in his next message."
+            )
+        del _edit_proposals[conversation.id]
+
+    agent = (
+        db.query(Agent)
+        .filter(Agent.company_id == conversation.company_id)
+        .filter(Agent.can_publish_instagram.is_(True))
+        .filter(Agent.is_active.is_(True))
+        .first()
+    )
+    if not agent:
+        return "No agent with Instagram publishing capability is configured for this company."
+    if not has_account(conversation.company_id):
+        return (
+            "Instagram publishing is not set up for this company (no Instagram account is "
+            "connected). Tell the owner; do not try to work around it with delegate_task."
+        )
+
+    source = (
+        db.query(PendingPost)
+        .filter(PendingPost.id == int(args["source_post_id"]), PendingPost.company_id == conversation.company_id)
+        .first()
+    )
+    if not source or source.media_type != "REELS":
+        return "That post is not a Reels video of this company. Call list_video_posts and use an id it returns."
+
+    wanted = [int(i) for i in args.get("reference_media_ids") or []]
+    found = get_assets(db, conversation.company_id, wanted)
+    if not wanted or len(found) != len(set(wanted)):
+        return (
+            "Reference photos are required and must come from list_media (this company's library, "
+            f"at most {MAX_REFERENCES}). If there are none, ask the owner to send photos to the bot."
+        )
+
+    keep = float(args["keep_until_seconds"])
+    snapped_note = ""
+    path = _local_video_path(source.image_url)
+    if path:
+        duration = probe_duration(path)
+        if not 1 <= keep <= duration - 1:
+            return (
+                f"keep_until_seconds={keep} is invalid: that video lasts {duration:.1f}s. Choose a value "
+                f"between 1 and {duration - 1:.1f}, ideally where the last scene starts (see the scene "
+                "start times in list_video_posts)."
+            )
+        # Cut on a scene boundary, otherwise a fragment of the old last scene remains.
+        cuts = [c for c in scene_cuts(path) if 1 <= c <= duration - 1]
+        nearest = min(cuts, key=lambda c: abs(c - keep), default=None)
+        if nearest is not None and abs(nearest - keep) <= 2.5 and nearest != keep:
+            snapped_note = f" The cut was moved from {keep}s to {nearest}s, the start of the scene; tell the owner {nearest}s."
+            keep = nearest
+        args = {**args, "keep_until_seconds": keep}
+
+    layout = args.get("layout") or "bottom_stack"
+    if layout not in LAYOUTS:
+        layout = "bottom_stack"
+    text = {
+        "headline": args.get("headline") or [],
+        "info_line": args.get("info_line") or "",
+        "chips": args.get("chips") or [],
+        "layout": layout,
+    }
+
+    if not confirm:
+        _edit_proposals[conversation.id] = (args, _owner_message_count(db, conversation))
+        return (
+            f"Proposal saved.{snapped_note} NOTHING has been started and nothing has been spent. Now write the plan to "
+            "the owner in plain Russian (which post, how many seconds stay, how the new ending looks, "
+            "the layout, the EXACT on-screen texts, cost about $0.65) and ask whether to start. "
+            "STOP after asking. When the owner approves in his next message, call confirm_video_edit; "
+            "if he asks for changes, call edit_instagram_video_post again with the corrected plan."
+        )
+
+    task_queue.enqueue(
+        edit_instagram_video_post,
+        agent.id,
+        conversation.company_id,
+        source.id,
+        float(args["keep_until_seconds"]),
+        args.get("ending_description", ""),
+        [a.id for a in found],
+        text,
+        args.get("caption"),
+        job_timeout=1200,
+    )
+    return (
+        f"{agent.name} is editing post {source.id} now (about 5 minutes) and will send the new "
+        "version to the owner on Telegram for approval before publishing."
+    )
+
+
 def _list_media(db: Session, company_id: int) -> str:
     assets = list_assets(db, company_id)
     if not assets:
@@ -406,6 +652,21 @@ def _create_instagram_video_post(
     )
 
 
+def _system_prompt(director: Agent, conversation: Conversation) -> str:
+    prompt = f"{director.system_prompt}\n\n{PHOTO_LIBRARY_RULES}\n\n{VIDEO_EDIT_RULES}"
+    if conversation.id in _edit_proposals:
+        # Tool calls are not part of the chat history the model sees, so tell it explicitly.
+        prompt += (
+            "\n\nSTATE: a video-edit plan is recorded and waits for the owner's decision "
+            "(nothing started yet). If the owner's latest message approves it (да, давай, "
+            "запускай, ок...), call confirm_video_edit now and do not call "
+            "edit_instagram_video_post again. If he wants changes, call "
+            "edit_instagram_video_post with the corrected plan and present it again. "
+            "If he declines, do nothing."
+        )
+    return prompt
+
+
 def _build_history(db: Session, conversation: Conversation) -> list[dict]:
     messages = (
         db.query(Message)
@@ -439,7 +700,7 @@ def handle_user_message(db: Session, conversation: Conversation, text: str) -> s
     db.commit()
 
     messages = [
-        {"role": "system", "content": f"{director.system_prompt}\n\n{PHOTO_LIBRARY_RULES}"},
+        {"role": "system", "content": _system_prompt(director, conversation)},
         *_build_history(db, conversation),
     ]
 
@@ -486,6 +747,15 @@ def handle_user_message(db: Session, conversation: Conversation, text: str) -> s
                     conversation,
                     args.get("topic", ""),
                 )
+            elif tool_call.function.name == "list_video_posts":
+                result = _list_video_posts(db, conversation.company_id)
+            elif tool_call.function.name == "edit_instagram_video_post":
+                try:
+                    result = _edit_instagram_video_post(db, conversation, args)
+                except (KeyError, ValueError, TypeError) as exc:
+                    result = f"Invalid arguments for edit_instagram_video_post: {exc!r}"
+            elif tool_call.function.name == "confirm_video_edit":
+                result = _edit_instagram_video_post(db, conversation, {}, confirm=True)
             elif tool_call.function.name == "list_media":
                 result = _list_media(db, conversation.company_id)
             elif tool_call.function.name == "create_instagram_video_post":
