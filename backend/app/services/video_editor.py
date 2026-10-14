@@ -250,3 +250,122 @@ def scene_cuts(path: str, threshold: float = 0.35, merge_within: float = 0.6) ->
         if not cuts or t - cuts[-1] > merge_within:
             cuts.append(round(t, 2))
     return cuts
+
+
+# ---------------------------------------------------------------- brand end card
+
+COLORS["black"] = (0, 0, 0)
+
+
+def brand_color(company_id: int) -> tuple[int, int, int]:
+    """The dominant saturated colour of the company's logo plate (the brand yellow/mustard)."""
+    from collections import Counter
+
+    path = logo_path(company_id)
+    if not path:
+        return YELLOW
+    img = Image.open(path).convert("RGBA")
+    img.thumbnail((300, 300))
+    counts: Counter = Counter()
+    for r, g, b, a in img.getdata():
+        if a > 220 and max(r, g, b) - min(r, g, b) > 60:
+            counts[(r, g, b)] += 1
+    return counts.most_common(1)[0][0] if counts else YELLOW
+
+
+def parse_color(value: str | None, company_id: int) -> tuple[int, int, int]:
+    value = (value or "").strip().lower()
+    if value in ("", "brand", "mustard", "горчичный"):
+        return brand_color(company_id)
+    if value in COLORS:
+        return COLORS[value]
+    value = value.lstrip("#")
+    if len(value) == 6:
+        try:
+            return tuple(int(value[i:i + 2], 16) for i in (0, 2, 4))  # type: ignore[return-value]
+        except ValueError:
+            pass
+    raise ValueError(f"unknown colour {value!r}: use 'mustard', 'black', 'white' or a #RRGGBB hex")
+
+
+def _render_card_text(spec: TextSpec, width: int, height: int, text_top: float, out_path: str) -> None:
+    k = height / 1344
+    margin = width * 0.08
+    layer = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    y = text_top
+    for line in spec.headline:
+        text = line.get("text", "")
+        font = _fit_font(draw, text, round(50 * k), width - 2 * margin, b"Bold")
+        _centered(layer, y, text, font, COLORS.get(line.get("color", "black"), COLORS["black"]) + (255,), 0)
+        y += 62 * k
+    if spec.info_line:
+        font = _fit_font(draw, spec.info_line, round(30 * k), width - 2 * margin, b"SemiBold")
+        _centered(layer, y + 18 * k, spec.info_line, font, COLORS["black"] + (255,), 0)
+    layer.save(out_path)
+
+
+def recut_with_end_card(
+    source_path: str,
+    dst_path: str,
+    keep_seconds: float,
+    spec: TextSpec,
+    company_id: int,
+    background: str | None = None,
+) -> float:
+    """source[0:keep_seconds] + crossfade into a flat-colour brand card: the company
+    logo large in the middle, animated text under it. Output keeps the source length
+    and audio."""
+    src = _probe(source_path)
+    width, height = src["width"], src["height"]
+    if not 0.5 <= keep_seconds <= src["duration"] - 1:
+        raise ValueError(f"keep_seconds must be between 0.5 and {src['duration'] - 1:.1f}")
+    logo = logo_path(company_id)
+    if not logo:
+        raise ValueError("this company has no logo file; a brand card needs one")
+
+    bg = parse_color(background, company_id)
+    keep_frames = round(keep_seconds * FPS)
+    keep_len = keep_frames / FPS
+    card_start = keep_len - XFADE_SECONDS
+    card_len = src["duration"] - card_start
+
+    logo_img = Image.open(logo)
+    logo_w = round(width * 0.68)
+    logo_h = round(logo_w * logo_img.height / logo_img.width)
+    logo_y = round(height * 0.40 - logo_h / 2)
+    text_top = logo_y + logo_h + round(46 * height / 1344)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        text_png = os.path.join(tmp, "card_text.png")
+        _render_card_text(spec, width, height, text_top, text_png)
+
+        slide = round(28 * height / 1344)
+        t_logo, t_text = 0.35, 0.95
+        filt = ";".join([
+            f"[0:v]trim=end_frame={keep_frames},setpts=PTS-STARTPTS,fps={FPS},setsar=1,format=yuv420p[a]",
+            f"[1:v]format=yuv420p,setsar=1[bg]",
+            f"[2:v]scale={logo_w}:-1:flags=lanczos,format=rgba,fade=t=in:st={t_logo}:d=0.55:alpha=1[lg]",
+            f"[3:v]format=rgba,fade=t=in:st={t_text}:d=0.5:alpha=1[tx]",
+            f"[bg][lg]overlay=x=(W-w)/2:y='{logo_y}+(1-clip((t-{t_logo})/0.55,0,1))*{slide}':eval=frame:format=auto[c1]",
+            f"[c1][tx]overlay=x=0:y='(1-clip((t-{t_text})/0.5,0,1))*{slide}':eval=frame:format=auto,fps={FPS},format=yuv420p[c]",
+            f"[a][c]xfade=transition=fade:duration={XFADE_SECONDS}:offset={card_start:.3f},format=yuv420p[v]",
+        ])
+        hex_bg = "0x%02x%02x%02x" % bg
+        subprocess.run(
+            [
+                "ffmpeg", "-y", "-loglevel", "error",
+                "-i", source_path,
+                "-f", "lavfi", "-i", f"color=c={hex_bg}:s={width}x{height}:r={FPS}:d={card_len + 0.2:.3f}",
+                "-loop", "1", "-framerate", str(FPS), "-t", f"{card_len + 0.2:.3f}", "-i", logo,
+                "-loop", "1", "-framerate", str(FPS), "-t", f"{card_len + 0.2:.3f}", "-i", text_png,
+                "-filter_complex", filt,
+                "-map", "[v]", "-map", "0:a?",
+                "-c:v", "libx264", "-preset", "medium", "-crf", "18",
+                "-c:a", "copy", "-movflags", "+faststart",
+                "-t", f"{src['duration']:.3f}", dst_path,
+            ],
+            check=True,
+            capture_output=True,
+        )
+    return src["duration"]

@@ -61,7 +61,15 @@ DIRECTOR_SYSTEM_PROMPT = (
 # Appended to every Director's stored prompt at request time (the stored prompt
 # is per company in the DB and would not pick up code changes otherwise).
 VIDEO_EDIT_RULES = (
-    "EDITING AN EXISTING REEL. You CAN edit finished videos: call "
+    "EDITING AN EXISTING REEL. You CAN edit finished videos (when the owner asks "
+    "to fix a closing frame, a logo, a background colour or a slogan colour of a "
+    "video, this is the tool; never answer that you cannot edit video, and do not "
+    "delegate it with delegate_task). If he wants a clean closing card with the "
+    "logo, a coloured background and a slogan, use ending_type=brand_card "
+    "(free, no photos needed, colour 'mustard' is the logo's yellow); for a new "
+    "filmed closing scene use ending_type=scene. In brand_card the headline "
+    "lines are the slogan (black by default); the logo is placed automatically. "
+    "Call "
     "list_video_posts to find the post (ids, status, caption), then "
     "edit_instagram_video_post. The edit keeps the first part of the video "
     "(keep_until_seconds), replaces the rest with a NEW closing scene generated "
@@ -220,7 +228,7 @@ TOOLS = [
                             "type": "object",
                             "properties": {
                                 "text": {"type": "string"},
-                                "color": {"type": "string", "enum": ["white", "yellow"]},
+                                "color": {"type": "string", "enum": ["white", "yellow", "black"]},
                             },
                             "required": ["text"],
                         },
@@ -232,12 +240,21 @@ TOOLS = [
                         "description": "Short pills at the bottom, e.g. a discount and opening hours. The first is highlighted in yellow.",
                     },
                     "layout": {"type": "string", "enum": list(LAYOUTS)},
+                    "ending_type": {
+                        "type": "string",
+                        "enum": ["scene", "brand_card"],
+                        "description": "scene = new AI-generated closing scene from the owner's photos (about $0.65, needs reference_media_ids). brand_card = flat-colour card with the company logo in the middle and the headline/info texts under it (drawn locally, FREE, no photos needed) — use it when the owner asks for a logo on a coloured background / a clean closing card.",
+                    },
+                    "background_color": {
+                        "type": "string",
+                        "description": "brand_card only: 'mustard' (the logo's own yellow, default), 'black', 'white' or a #RRGGBB hex.",
+                    },
                     "caption": {
                         "type": "string",
                         "description": "New post caption; omit to keep the original caption.",
                     },
                 },
-                "required": ["source_post_id", "keep_until_seconds", "ending_description", "reference_media_ids"],
+                "required": ["source_post_id", "keep_until_seconds", "ending_description"],
             },
         },
     },
@@ -530,9 +547,13 @@ def _edit_instagram_video_post(db: Session, conversation: Conversation, args: di
     if not source or source.media_type != "REELS":
         return "That post is not a Reels video of this company. Call list_video_posts and use an id it returns."
 
+    ending_type = args.get("ending_type") or "scene"
+    if ending_type not in ("scene", "brand_card"):
+        ending_type = "scene"
+
     wanted = [int(i) for i in args.get("reference_media_ids") or []]
     found = get_assets(db, conversation.company_id, wanted)
-    if not wanted or len(found) != len(set(wanted)):
+    if ending_type == "scene" and (not wanted or len(found) != len(set(wanted))):
         return (
             "Reference photos are required and must come from list_media (this company's library, "
             f"at most {MAX_REFERENCES}). If there are none, ask the owner to send photos to the bot."
@@ -572,7 +593,8 @@ def _edit_instagram_video_post(db: Session, conversation: Conversation, args: di
         return (
             f"Proposal saved.{snapped_note} NOTHING has been started and nothing has been spent. Now write the plan to "
             "the owner in plain Russian (which post, how many seconds stay, how the new ending looks, "
-            "the layout, the EXACT on-screen texts, cost about $0.65) and ask whether to start. "
+            "the layout, the EXACT on-screen texts, the cost: about $0.65 for a generated scene, free for a "
+            "brand_card) and ask whether to start. "
             "STOP after asking. When the owner approves in his next message, call confirm_video_edit; "
             "if he asks for changes, call edit_instagram_video_post again with the corrected plan."
         )
@@ -587,6 +609,8 @@ def _edit_instagram_video_post(db: Session, conversation: Conversation, args: di
         [a.id for a in found],
         text,
         args.get("caption"),
+        ending_type,
+        args.get("background_color"),
         job_timeout=1200,
     )
     return (

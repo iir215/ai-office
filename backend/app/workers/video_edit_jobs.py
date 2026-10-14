@@ -18,7 +18,12 @@ from app.services.instagram_accounts import has_account
 from app.services.media_library import as_data_uri, get_assets
 from app.services.minimax_video import generate_video
 from app.services.telegram import notify_company
-from app.services.video_editor import TextSpec, probe_duration, recut_with_new_ending
+from app.services.video_editor import (
+    TextSpec,
+    probe_duration,
+    recut_with_end_card,
+    recut_with_new_ending,
+)
 from app.workers.instagram_jobs import _build_video_prompt
 
 ENDING_SECONDS = 5
@@ -46,6 +51,8 @@ def edit_instagram_video_post(
     reference_media_ids: list[int],
     text: dict | None = None,
     caption: str | None = None,
+    ending_type: str = "scene",
+    background_color: str | None = None,
 ) -> None:
     db = SessionLocal()
     try:
@@ -65,30 +72,31 @@ def edit_instagram_video_post(
             if not source or source.media_type != "REELS":
                 raise ValueError(f"post {source_post_id} is not a Reels video of this company")
 
-            photos = get_assets(db, company_id, reference_media_ids)
-            if not photos:
-                raise ValueError("no reference photos found for the new ending")
-
             spec = TextSpec(**(text or {}))
             with tempfile.TemporaryDirectory() as tmp:
                 source_path = _source_video(source.image_url, tmp)
                 keep = min(float(keep_seconds), probe_duration(source_path))
-
-                prompt = _build_video_prompt(ending_description, with_references=True)
-                ending_bytes = generate_video(
-                    prompt,
-                    duration=ENDING_SECONDS,
-                    reference_images=[as_data_uri(a) for a in photos],
-                )
-                ending_path = os.path.join(tmp, "ending.mp4")
-                with open(ending_path, "wb") as f:
-                    f.write(ending_bytes)
-
                 os.makedirs(VIDEO_DIR, exist_ok=True)
                 filename = f"{uuid.uuid4().hex}.mp4"
-                recut_with_new_ending(
-                    source_path, ending_path, os.path.join(VIDEO_DIR, filename), keep, spec, company_id
-                )
+                dst = os.path.join(VIDEO_DIR, filename)
+
+                if ending_type == "brand_card":
+                    # Flat-colour card with the logo and text: drawn locally, no AI, no cost.
+                    recut_with_end_card(source_path, dst, keep, spec, company_id, background_color)
+                else:
+                    photos = get_assets(db, company_id, reference_media_ids)
+                    if not photos:
+                        raise ValueError("no reference photos found for the new ending")
+                    prompt = _build_video_prompt(ending_description, with_references=True)
+                    ending_bytes = generate_video(
+                        prompt,
+                        duration=ENDING_SECONDS,
+                        reference_images=[as_data_uri(a) for a in photos],
+                    )
+                    ending_path = os.path.join(tmp, "ending.mp4")
+                    with open(ending_path, "wb") as f:
+                        f.write(ending_bytes)
+                    recut_with_new_ending(source_path, ending_path, dst, keep, spec, company_id)
 
             video_url = f"{settings.PUBLIC_BASE_URL}/ui/videos/{filename}"
             post_caption = caption or source.caption
