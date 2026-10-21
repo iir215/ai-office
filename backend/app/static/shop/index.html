@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Bonch Burgers</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --mustard: #FCC904;
+    --mustard-light: #FFE27A;
+    --ink: #141414;
+    --green: #1F4D3A;
+    --orange: #F26A1B;
+    --paper: #FFF8DC;
+    --card: #FFFFFF;
+    --muted: #4A4023;
+    --danger: #C0392B;
+    --px: 3px;
+    --head: "Press Start 2P", "Pixelify Sans", monospace;
+    --body: "Pixelify Sans", "Press Start 2P", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; border-radius: 0; }
+  html, body { overflow-x: hidden; margin: 0; background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.3; font-weight: 500; }
+  body { min-height: 100vh; padding-bottom: calc(110px + env(safe-area-inset-bottom)); image-rendering: pixelated; }
+  button, input, textarea { font-family: var(--body); }
+  button { color: inherit; cursor: pointer; }
+  img.spr { image-rendering: pixelated; image-rendering: crisp-edges; display: block; }
+  .hidden { display: none !important; }
+
+  /* a box with a pixel border: four hard shadows leave the corners notched, like the logo plate */
+  .pxbox { background: var(--card); margin: var(--px);
+    box-shadow: 0 calc(-1 * var(--px)) 0 0 var(--ink), 0 var(--px) 0 0 var(--ink), calc(-1 * var(--px)) 0 0 0 var(--ink), var(--px) 0 0 0 var(--ink),
+                calc(var(--px) * 2.5) calc(var(--px) * 2.5) 0 0 rgba(20,20,20,.22); }
+  .pxbtn { border: 0; background: var(--mustard); margin: var(--px); padding: 10px 14px; font-weight: 700; font-size: 18px; min-height: 44px;
+    box-shadow: 0 calc(-1 * var(--px)) 0 0 var(--ink), 0 var(--px) 0 0 var(--ink), calc(-1 * var(--px)) 0 0 0 var(--ink), var(--px) 0 0 0 var(--ink),
+                var(--px) calc(var(--px) * 2) 0 0 var(--ink); position: relative; }
+  .pxbtn:active { transform: translate(2px, 2px); box-shadow: 0 calc(-1 * var(--px)) 0 0 var(--ink), 0 var(--px) 0 0 var(--ink), calc(-1 * var(--px)) 0 0 0 var(--ink), var(--px) 0 0 0 var(--ink); }
+  .band { height: 24px; background: url(/ui/shop/sprites/band.png) repeat-x; background-size: 144px 24px; image-rendering: pixelated; }
+
+  /* header: the Bonch logo plate with "by Baursak" under it, as on the truck */
+  header { background: var(--mustard); padding: calc(12px + env(safe-area-inset-top)) 14px 8px; position: relative; text-align: center; }
+  header .logo { height: 54px; margin: 0 auto; }
+  .by { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; font-weight: 700; font-size: 17px; }
+  .by img { width: 20px; height: 20px; }
+  .by b { font-weight: 700; letter-spacing: .02em; }
+  .lang { position: absolute; right: 12px; top: calc(12px + env(safe-area-inset-top)); display: flex; }
+  .lang button { border: 0; background: var(--card); font-family: var(--body); font-weight: 700; font-size: 15px; padding: 6px 10px; min-height: 32px; margin: 0; box-shadow: 0 0 0 3px var(--ink); }
+  .lang button + button { margin-left: 3px; }
+  .lang button.on { background: var(--ink); color: var(--mustard); }
+
+  .chips { position: sticky; top: 0; z-index: 15; background: var(--paper); display: flex; gap: 10px; overflow-x: auto; padding: 12px 14px 12px; scrollbar-width: none; border-bottom: 3px solid var(--ink); }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip { flex: none; display: flex; align-items: center; gap: 6px; border: 0; background: var(--card); padding: 6px 10px 6px 6px; min-height: 42px; font-weight: 700; font-size: 16px;
+    box-shadow: 0 -3px 0 0 var(--ink), 0 3px 0 0 var(--ink), -3px 0 0 0 var(--ink), 3px 0 0 0 var(--ink); margin: 3px; }
+  .chip img { width: 28px; height: 28px; }
+  .chip.on { background: var(--mustard); }
+
+  main { padding: 6px 16px 0; max-width: 640px; margin: 0 auto; }
+
+  /* group title: a plate like the BONCH logo — yellow, notched corners, orange pixel in the corner, tag hole */
+  .plate { position: relative; display: flex; align-items: center; gap: 12px; margin: 26px 0 16px; }
+  .plate .tag { position: relative; background: var(--mustard); padding: 12px 18px 12px 24px; margin: 3px;
+    box-shadow: 0 -3px 0 0 var(--ink), 0 3px 0 0 var(--ink), -3px 0 0 0 var(--ink), 3px 0 0 0 var(--ink), 6px 6px 0 0 rgba(20,20,20,.25); }
+  .plate .tag::before { content: ""; position: absolute; left: 6px; top: 50%; width: 6px; height: 6px; margin-top: -3px; background: var(--paper); box-shadow: 0 0 0 2px var(--ink); }
+  .plate .tag::after { content: ""; position: absolute; right: -5px; top: -5px; width: 9px; height: 9px; background: var(--orange); box-shadow: 0 0 0 2px var(--ink); }
+  .plate h2 { margin: 0; font-family: var(--head); font-size: 13px; line-height: 1.5; text-transform: uppercase; letter-spacing: .02em; text-shadow: 1px 1px 0 rgba(255,255,255,.35); }
+  .plate .pic { width: 48px; height: 48px; margin-left: auto; }
+
+  .item { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 12px; padding: 12px; margin-bottom: 18px; align-items: center; }
+  .item .art { width: 76px; height: 76px; background: var(--mustard-light); display: grid; place-items: center; box-shadow: inset 0 0 0 3px var(--ink); }
+  .item .art img { width: 60px; height: 60px; }
+  .item .name { font-weight: 700; font-size: 20px; line-height: 1.15; }
+  .item .desc { font-size: 16px; font-weight: 500; color: var(--muted); margin-top: 4px; line-height: 1.25; }
+  .item .foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 8px; margin-top: 8px; }
+  .item .price { font-family: var(--body); font-weight: 700; font-size: 20px; white-space: nowrap; line-height: 1.2; }
+
+  .stepper { display: inline-flex; align-items: center; margin: 3px; background: var(--mustard);
+    box-shadow: 0 -3px 0 0 var(--ink), 0 3px 0 0 var(--ink), -3px 0 0 0 var(--ink), 3px 0 0 0 var(--ink); }
+  .stepper button { width: 42px; height: 42px; border: 0; background: transparent; font-family: var(--body); font-weight: 700; font-size: 26px; line-height: 1; display: grid; place-items: center; }
+  .stepper button:active { background: var(--ink); color: var(--mustard); }
+  .stepper span { min-width: 36px; text-align: center; font-family: var(--body); font-weight: 700; font-size: 21px; }
+  .add { padding: 8px 12px; min-height: 42px; font-size: 17px; display: inline-flex; align-items: center; gap: 6px; }
+  .add b { font-family: var(--body); font-size: 22px; line-height: 1; }
+
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; padding: 12px 16px calc(14px + env(safe-area-inset-bottom)); background: var(--paper); z-index: 30; border-top: 3px solid var(--ink); }
+  .primary { width: calc(100% - 6px); margin: 3px; min-height: 54px; border: 0; background: var(--ink); color: var(--mustard); font-weight: 700; font-size: 20px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px;
+    box-shadow: 0 0 0 3px var(--ink), 6px 6px 0 3px var(--green); position: relative; }
+  .primary:active { transform: translate(3px, 3px); box-shadow: 0 0 0 3px var(--ink); }
+  .primary:disabled { opacity: .5; }
+  .primary.center { justify-content: center; }
+  .primary .sum { font-family: var(--body); font-weight: 700; font-size: 22px; }
+  .secondary { width: calc(100% - 6px); min-height: 48px; margin-top: 14px; }
+
+  .view { padding: 14px 16px 0; max-width: 640px; margin: 0 auto; }
+  .view h1 { font-family: var(--body); font-weight: 700; font-size: 28px; line-height: 1.1; margin: 8px 0 16px; text-transform: uppercase; letter-spacing: .02em; }
+  .back { border: 0; background: transparent; font-weight: 700; padding: 8px 0; font-size: 19px; }
+  label.f { display: block; font-family: var(--body); font-weight: 700; font-size: 16px; color: var(--muted); margin: 20px 3px 8px; text-transform: uppercase; letter-spacing: .04em; line-height: 1.3; }
+  input, textarea { width: calc(100% - 6px); margin: 3px; border: 0; padding: 13px 12px; font-size: 20px; font-weight: 500; background: var(--card); color: var(--ink);
+    box-shadow: 0 -3px 0 0 var(--ink), 0 3px 0 0 var(--ink), -3px 0 0 0 var(--ink), 3px 0 0 0 var(--ink); }
+  textarea { min-height: 70px; resize: vertical; }
+  input:focus, textarea:focus { background: #FFFBE0; outline: 0; box-shadow: 0 -3px 0 0 var(--orange), 0 3px 0 0 var(--orange), -3px 0 0 0 var(--orange), 3px 0 0 0 var(--orange); }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .seg button { border: 0; background: var(--card); min-height: 52px; font-weight: 700; font-size: 19px; margin: 3px;
+    box-shadow: 0 -3px 0 0 var(--ink), 0 3px 0 0 var(--ink), -3px 0 0 0 var(--ink), 3px 0 0 0 var(--ink); }
+  .seg button.on { background: var(--mustard); }
+  .note { font-size: 16px; color: var(--muted); margin: 10px 3px 0; }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 3px dotted #b9ad7f; }
+  .row .t { font-weight: 700; font-size: 19px; }
+  .row .s { font-size: 16px; font-weight: 500; color: var(--muted); }
+  .row .thumb { width: 36px; height: 36px; margin-right: 8px; }
+  .row .left { display: flex; align-items: center; }
+  .total { display: flex; justify-content: space-between; align-items: center; font-family: var(--body); font-weight: 700; font-size: 24px; padding: 18px 0 4px; line-height: 1.3; text-transform: uppercase; }
+  .total span:last-child { font-size: 24px; }
+  .pay { display: grid; gap: 12px; }
+  .pay button { border: 0; background: var(--card); min-height: 62px; padding: 8px 14px; text-align: left; font-weight: 700; font-size: 19px; margin: 3px;
+    box-shadow: 0 -3px 0 0 var(--ink), 0 3px 0 0 var(--ink), -3px 0 0 0 var(--ink), 3px 0 0 0 var(--ink); }
+  .pay button.on { background: var(--mustard); }
+  .pay small { font-weight: 500; color: var(--muted); display: block; font-size: 16px; margin-top: 2px; }
+  .locbtn { display: flex; align-items: center; gap: 10px; width: calc(100% - 6px); justify-content: center; }
+  .locbtn img { width: 26px; height: 26px; image-rendering: pixelated; }
+  .locbtn:disabled { opacity: .6; }
+  #loc-status a { color: var(--green); font-weight: 700; }
+  #loc-status button { border: 0; background: transparent; font-weight: 700; text-decoration: underline; font-size: 16px; padding: 4px 8px; }
+  .err { color: var(--danger); font-weight: 700; font-size: 18px; margin: 14px 3px 0; min-height: 22px; }
+
+  .done-no { font-family: var(--head); font-size: 28px; background: var(--mustard); display: inline-block; padding: 16px 22px; margin: 14px 3px 18px;
+    box-shadow: 0 -3px 0 0 var(--ink), 0 3px 0 0 var(--ink), -3px 0 0 0 var(--ink), 3px 0 0 0 var(--ink), 8px 8px 0 0 var(--green); }
+  .steps { list-style: none; padding: 0; margin: 22px 0; display: grid; gap: 14px; }
+  .steps li { display: flex; align-items: center; gap: 14px; font-weight: 600; font-size: 20px; color: var(--muted); }
+  .steps li i { width: 20px; height: 20px; background: var(--card); box-shadow: 0 0 0 3px var(--ink); flex: none; margin: 3px; }
+  .steps li.on { color: var(--ink); font-weight: 700; }
+  .steps li.on i { background: var(--mustard); }
+  .steps li.past i { background: var(--green); }
+  .bad { color: var(--danger); }
+  .toast { position: fixed; left: 16px; right: 16px; bottom: calc(110px + env(safe-area-inset-bottom)); background: var(--ink); color: #fff; padding: 12px 14px; font-weight: 600; font-size: 18px; z-index: 50; }
+  /* splash: food on a conveyor belt while the menu loads */
+  #splash { position: fixed; inset: 0; z-index: 100; background: var(--mustard); display: flex; flex-direction: column; align-items: center; transition: opacity .35s steps(5); }
+  #splash.out { opacity: 0; pointer-events: none; }
+  #splash .top { margin-top: calc(40px + env(safe-area-inset-top)); text-align: center; }
+  #splash .top img.logo { height: 58px; display: block; margin: 0 auto; image-rendering: pixelated; }
+  #splash .by { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; font-weight: 700; font-size: 18px; }
+  #splash .by img { width: 22px; height: 22px; image-rendering: pixelated; }
+  #splash .stage { flex: 1; width: 100%; display: grid; place-items: center; }
+  .beltD { position: relative; width: 100%; max-width: 480px; height: 160px; overflow: hidden; }
+  .trackD { position: absolute; left: 0; top: 20px; display: flex; gap: 22px; animation: beltD 7s infinite steps(49); }
+  .trackD img { width: 76px; height: 76px; flex: none; image-rendering: pixelated; }
+  .beltD .rail { position: absolute; left: 0; right: 0; top: 108px; height: 22px; background: var(--ink); }
+  .beltD .rail::before { content: ""; position: absolute; inset: 6px 0; background: repeating-linear-gradient(90deg, #777 0 12px, transparent 12px 24px); animation: railD 1s infinite steps(4); }
+  @keyframes beltD { to { transform: translateX(-686px); } }
+  @keyframes railD { to { background-position: -24px 0; } }
+  #splash .label { font-family: var(--head); font-size: 12px; text-align: center; line-height: 1.8; }
+  #splash .label small { display: block; font-family: var(--body); font-size: 18px; font-weight: 600; margin-top: 2px; }
+  #splash .dots::after { content: ""; animation: dots 1.2s steps(1) infinite; }
+  @keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
+  #splash .bottom { width: 100%; max-width: 480px; padding: 0 32px calc(40px + env(safe-area-inset-bottom)); }
+  #splash .bar { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; padding: 4px; margin-top: 12px; background: var(--paper); box-shadow: 0 0 0 3px var(--ink); }
+  #splash .bar i { height: 16px; background: #e6dba8; }
+  #splash .bar i.on { background: var(--green); }
+  .empty { text-align: center; color: var(--muted); padding: 60px 0; font-size: 20px; }
+</style>
+</head>
+<body>
+<div id="splash" role="status" aria-label="Loading">
+  <div class="top">
+    <img class="logo" alt="Bonch Burgers" src="/ui/logos/2.png">
+    <div class="by"><span>by</span><img alt="" src="/ui/shop/sprites/flame.png"><b>Baursak</b></div>
+  </div>
+  <div class="stage"><div class="beltD"><div class="trackD" id="belt"></div><div class="rail"></div></div></div>
+  <div class="bottom">
+    <div class="label"><span class="dots">ЗАГРУЖАЕМ МЕНЮ</span><small>Menyu yuklanmoqda</small></div>
+    <div class="bar" id="splash-bar"></div>
+  </div>
+</div>
+<header>
+  <img class="logo spr" id="logo" alt="Bonch Burgers" src="/ui/logos/2.png">
+  <div class="by"><span>by</span><img class="spr" alt="" src="/ui/shop/sprites/flame.png"><b>Baursak</b></div>
+  <div class="lang" role="group" aria-label="Language">
+    <button id="l-ru" type="button">RU</button>
+    <button id="l-uz" type="button">UZ</button>
+  </div>
+</header>
+<div class="band" aria-hidden="true"></div>
+
+<section id="v-menu">
+  <nav class="chips" id="chips"></nav>
+  <main id="menu"></main>
+  <div class="band" aria-hidden="true" style="margin-top:26px"></div>
+  <div class="bar hidden" id="cartbar">
+    <button class="primary" id="open-cart" type="button"><span id="cart-label"></span><span class="sum" id="cart-sum"></span></button>
+  </div>
+</section>
+
+<section id="v-checkout" class="view hidden">
+  <button class="back" id="back" type="button">&lt; <span data-t="back"></span></button>
+  <h1 data-t="checkout"></h1>
+  <div id="lines"></div>
+  <div class="total"><span data-t="total"></span><span id="sum"></span></div>
+
+  <label class="f" data-t="how"></label>
+  <div class="seg" id="seg-ful"><button type="button" data-v="pickup"></button><button type="button" data-v="delivery"></button></div>
+  <p class="note hidden" id="delivery-note"></p>
+
+  <label class="f" data-t="name"></label>
+  <input id="name" autocomplete="name" maxlength="80">
+  <label class="f" data-t="phone"></label>
+  <input id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+998 90 123 45 67" maxlength="20">
+  <div id="addr-wrap" class="hidden">
+    <label class="f" data-t="address_ref"></label>
+    <button class="pxbtn locbtn" id="loc-btn" type="button"><img class="spr" alt="" src="/ui/shop/sprites/pin.png" width="26" height="26"><span id="loc-btn-t"></span></button>
+    <p class="note" id="loc-status"></p>
+    <textarea id="address" maxlength="300"></textarea>
+    <p class="note" data-t="loc_hint"></p>
+  </div>
+  <label class="f" data-t="comment"></label>
+  <textarea id="comment" maxlength="300"></textarea>
+
+  <label class="f" data-t="payment"></label>
+  <div class="pay" id="pay"></div>
+  <p class="err" id="err"></p>
+  <div style="height:110px"></div>
+  <div class="bar"><button class="primary center" id="submit" type="button"></button></div>
+</section>
+
+<section id="v-order" class="view hidden">
+  <p style="margin:6px 0 0;font-weight:700;font-size:20px" data-t="your_order"></p>
+  <div class="done-no" id="o-num"></div>
+  <p id="o-sub" style="font-weight:600;font-size:18px;margin:0 3px"></p>
+  <ul class="steps" id="steps"></ul>
+  <div id="o-lines"></div>
+  <div class="total"><span data-t="total"></span><span id="o-sum"></span></div>
+  <button class="primary center" id="pay-now" type="button"></button>
+  <button class="pxbtn secondary" id="again" type="button"></button>
+</section>
+
+<div class="toast hidden" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+  var tg = window.Telegram && window.Telegram.WebApp;
+  var qs = new URLSearchParams(location.search);
+  var API = "/shop";
+  var SPR = "/ui/shop/sprites/";
+  var company = qs.get("c") || "";
+
+  var I18N = {
+    ru: {
+      back: "Назад", checkout: "Оформление заказа", total: "Итого", how: "Как получить",
+      pickup: "Самовывоз", delivery: "Доставка", name: "Ваше имя", phone: "Телефон", address: "Адрес доставки",
+      comment: "Комментарий к заказу", payment: "Оплата", cart: "Корзина", add: "Добавить", place: "Оформить заказ",
+      cash_pickup: "Наличными при получении", cash_delivery: "Наличными курьеру", click: "Онлайн через Click",
+      click_hint: "Откроется страница оплаты Click", cash_hint: "Оплатите на месте",
+      your_order: "Ваш заказ", pay_now: "Оплатить через Click", again: "Заказать ещё",
+      need_tg: "Чтобы оформить заказ, откройте приложение из Telegram-бота.",
+      loading: "Загружаем меню…", fail: "Не удалось загрузить меню. Обновите страницу.",
+      sum: "сум", pcs: "шт.",
+      s_awaiting_payment: "Ждём оплату", s_new: "Заказ принят системой", s_accepted: "Готовим", s_ready_pickup: "Готов — заберите у фудтрака",
+      s_ready_delivery: "Готов — передан на доставку", s_done: "Выдан", s_cancelled: "Заказ отменён", s_expired: "Оплата не получена, заказ закрыт",
+      sub_pickup: "Самовывоз · Bonch Burgers, метро Беруний, Ледовый дворец Алпомиш", sub_delivery: "Доставка · оператор свяжется для уточнения",
+      paid_ok: "Оплачено", delivery_note: "Стоимость доставки уточнит оператор.",
+      address_ref: "Адрес или ориентир", share_loc: "Отправить геолокацию", loc_wait: "Определяем…", loc_got: "Локация получена",
+      loc_open: "Открыть на карте", loc_clear: "Убрать", loc_denied: "Нет доступа к геолокации. Разрешите её в настройках или введите адрес.",
+      loc_na: "Геолокация недоступна. Введите адрес.", loc_settings: "Открыть настройки", loc_hint: "Можно отправить локацию вместо адреса",
+      need_addr: "Введите адрес или отправьте геолокацию", loc_sent: "Локация передана",
+      st1: "Принят", st2: "Готовится", st3: "Готов", st4: "Выдан"
+    },
+    uz: {
+      back: "Orqaga", checkout: "Buyurtmani rasmiylashtirish", total: "Jami", how: "Qanday olasiz",
+      pickup: "Olib ketish", delivery: "Yetkazib berish", name: "Ismingiz", phone: "Telefon", address: "Yetkazib berish manzili",
+      comment: "Buyurtmaga izoh", payment: "To‘lov", cart: "Savat", add: "Qo‘shish", place: "Buyurtma berish",
+      cash_pickup: "Olganda naqd pul", cash_delivery: "Kuryerga naqd pul", click: "Click orqali onlayn",
+      click_hint: "Click to‘lov sahifasi ochiladi", cash_hint: "Joyida to‘laysiz",
+      your_order: "Sizning buyurtmangiz", pay_now: "Click orqali to‘lash", again: "Yana buyurtma berish",
+      need_tg: "Buyurtma berish uchun ilovani Telegram bot orqali oching.",
+      loading: "Menyu yuklanmoqda…", fail: "Menyuni yuklab bo‘lmadi. Sahifani yangilang.",
+      sum: "so‘m", pcs: "dona",
+      s_awaiting_payment: "To‘lov kutilmoqda", s_new: "Buyurtma tizimda qabul qilindi", s_accepted: "Tayyorlanmoqda", s_ready_pickup: "Tayyor — foodtruckdan olib keting",
+      s_ready_delivery: "Tayyor — yetkazib berishga topshirildi", s_done: "Topshirildi", s_cancelled: "Buyurtma bekor qilindi", s_expired: "To‘lov kelmadi, buyurtma yopildi",
+      sub_pickup: "Olib ketish · Bonch Burgers, Beruniy metrosi, Alpomish muz saroyi", sub_delivery: "Yetkazib berish · operator aniqlashtirish uchun bog‘lanadi",
+      paid_ok: "To‘langan", delivery_note: "Yetkazib berish narxini operator aytadi.",
+      address_ref: "Manzil yoki mo‘ljal", share_loc: "Geolokatsiyani yuborish", loc_wait: "Aniqlanmoqda…", loc_got: "Joylashuv olindi",
+      loc_open: "Xaritada ochish", loc_clear: "O‘chirish", loc_denied: "Geolokatsiyaga ruxsat yo‘q. Sozlamalarda ruxsat bering yoki manzilni yozing.",
+      loc_na: "Geolokatsiya mavjud emas. Manzilni yozing.", loc_settings: "Sozlamalarni ochish", loc_hint: "Manzil o‘rniga joylashuvni yuborishingiz mumkin",
+      need_addr: "Manzilni yozing yoki geolokatsiyani yuboring", loc_sent: "Joylashuv yuborildi",
+      st1: "Qabul qilindi", st2: "Tayyorlanmoqda", st3: "Tayyor", st4: "Topshirildi"
+    }
+  };
+  var CAT_UZ = {
+    "Бургеры": "Burgerlar", "French hotdog": "French hotdog", "Картофель фри": "Kartoshka fri",
+    "Наггетсы и крылья": "Naggets va qanotchalar", "Соусы": "Souslar", "Молочные коктейли": "Sutli kokteyllar",
+    "Напитки": "Ichimliklar", "Свежие фреши": "Yangi sharbatlar", "Чай и кофе": "Choy va qahva"
+  };
+  var CAT_SPRITE = {
+    "Бургеры": "burger_cheese", "French hotdog": "hotdog_classic", "Картофель фри": "fries_m",
+    "Наггетсы и крылья": "nuggets", "Соусы": "sauce_ketchup", "Молочные коктейли": "shake_choco",
+    "Напитки": "drink_cola", "Свежие фреши": "juice_orange", "Чай и кофе": "latte"
+  };
+
+  // ---- splash (conveyor with food), shown until the menu is loaded
+  var splashStart = Date.now(), splashTimer = null;
+  (function buildSplash() {
+    var names = ["burger_cheese", "fries_m", "shake_choco", "hotdog_classic", "drink_cola", "nuggets", "juice_orange"];
+    var belt = document.getElementById("belt");
+    names.concat(names).forEach(function (n) { var i = document.createElement("img"); i.src = SPR + n + ".png"; i.alt = ""; belt.appendChild(i); });
+    var bar = document.getElementById("splash-bar"), cells = [], n = 0;
+    for (var k = 0; k < 10; k++) { var c = document.createElement("i"); bar.appendChild(c); cells.push(c); }
+    splashTimer = setInterval(function () { n = (n + 1) % 11; cells.forEach(function (c, i) { c.classList.toggle("on", i < n); }); }, 220);
+    splashCells = cells;
+  })();
+  var splashCells = [];
+  function hideSplash() {
+    var wait = Math.max(0, 1600 - (Date.now() - splashStart));
+    setTimeout(function () {
+      clearInterval(splashTimer);
+      splashCells.forEach(function (c) { c.classList.add("on"); });
+      var sp = document.getElementById("splash");
+      if (!sp) return;
+      sp.classList.add("out");
+      setTimeout(function () { if (sp.parentNode) sp.parentNode.removeChild(sp); }, 500);
+    }, wait);
+  }
+
+  var state = { lang: "ru", menu: [], config: null, cart: {}, fulfillment: "pickup", payment: "cash", orderPoll: null, busy: false, loc: null, locState: "" };
+
+  function safeGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function safeSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function t(k) { return (I18N[state.lang] && I18N[state.lang][k]) || I18N.ru[k] || k; }
+  function $(id) { return document.getElementById(id); }
+  function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " " + t("sum"); }
+  function el(tag, attrs, kids) {
+    var e = document.createElement(tag);
+    Object.keys(attrs || {}).forEach(function (k) {
+      if (k === "class") e.className = attrs[k]; else if (k === "text") e.textContent = attrs[k]; else e.setAttribute(k, attrs[k]);
+    });
+    (kids || []).forEach(function (c) { if (c) e.appendChild(c); });
+    return e;
+  }
+  function sprite(name, cls) {
+    var i = el("img", { class: "spr " + (cls || ""), alt: "", src: SPR + (name || "burger_classic") + ".png", width: "24", height: "24" });
+    i.onerror = function () { i.style.visibility = "hidden"; };
+    return i;
+  }
+  function toast(msg) {
+    var n = $("toast"); n.textContent = msg; n.classList.remove("hidden");
+    clearTimeout(toast.t); toast.t = setTimeout(function () { n.classList.add("hidden"); }, 3200);
+  }
+
+  // ---- language
+  function detectLang() {
+    var saved = safeGet("shop_lang");
+    if (saved === "ru" || saved === "uz") return saved;
+    var u = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+    return u && String(u.language_code || "").toLowerCase().indexOf("uz") === 0 ? "uz" : "ru";
+  }
+  function setLang(l) {
+    state.lang = l; safeSet("shop_lang", l);
+    document.documentElement.lang = l;
+    $("l-ru").classList.toggle("on", l === "ru"); $("l-uz").classList.toggle("on", l === "uz");
+    document.querySelectorAll("[data-t]").forEach(function (n) { n.textContent = t(n.getAttribute("data-t")); });
+    renderAll();
+  }
+
+  // ---- cart
+  function itemById(id) {
+    for (var i = 0; i < state.menu.length; i++) for (var j = 0; j < state.menu[i].items.length; j++)
+      if (state.menu[i].items[j].id === id) return state.menu[i].items[j];
+    return null;
+  }
+  function cartLines() {
+    return Object.keys(state.cart).map(function (id) { var it = itemById(+id); return it ? { item: it, qty: state.cart[id] } : null; }).filter(Boolean);
+  }
+  function cartTotals() {
+    var n = 0, s = 0; cartLines().forEach(function (l) { n += l.qty; s += l.qty * l.item.price; }); return { n: n, sum: s };
+  }
+  function setQty(id, q) {
+    if (q <= 0) delete state.cart[id]; else state.cart[id] = Math.min(q, 20);
+    safeSet("shop_cart", JSON.stringify(state.cart));
+    renderAll();
+  }
+  function stepper(id, qty) {
+    var minus = el("button", { type: "button", "aria-label": "−", text: "-" });
+    var plus = el("button", { type: "button", "aria-label": "+", text: "+" });
+    minus.onclick = function () { setQty(id, qty - 1); }; plus.onclick = function () { setQty(id, qty + 1); };
+    return el("div", { class: "stepper" }, [minus, el("span", { text: String(qty) }), plus]);
+  }
+
+  // ---- menu
+  function renderMenu() {
+    var root = $("menu"), chips = $("chips");
+    root.textContent = ""; chips.textContent = "";
+    if (!state.menu.length) { root.appendChild(el("p", { class: "empty", text: t("loading") })); return; }
+    state.menu.forEach(function (c, idx) {
+      var title = state.lang === "uz" ? (CAT_UZ[c.category] || c.category) : c.category;
+      var icon = CAT_SPRITE[c.category] || (c.items[0] && c.items[0].sprite) || "burger_classic";
+      var chip = el("button", { class: "chip", type: "button" }, [sprite(icon), el("span", { text: title })]);
+      chip.onclick = function () {
+        var target = $("cat-" + idx); window.scrollTo({ top: target.offsetTop - 96, behavior: "smooth" });
+      };
+      chips.appendChild(chip);
+
+      var pic = sprite(icon, "pic"); pic.width = 48; pic.height = 48;
+      root.appendChild(el("div", { class: "plate", id: "cat-" + idx }, [
+        el("div", { class: "tag" }, [el("h2", { text: title })]), pic
+      ]));
+      c.items.forEach(function (it) {
+        var qty = state.cart[it.id] || 0;
+        var name = state.lang === "uz" ? it.name_uz : it.name;
+        var desc = state.lang === "uz" ? it.description_uz : it.description;
+        var art = el("div", { class: "art" }, [sprite(it.sprite || icon)]);
+        art.firstChild.width = 60; art.firstChild.height = 60;
+        var foot = el("div", { class: "foot" }, [el("div", { class: "price", text: fmt(it.price) })]);
+        if (qty) foot.appendChild(stepper(it.id, qty));
+        else {
+          var add = el("button", { class: "pxbtn add", type: "button" }, [el("b", { text: "+" }), el("span", { text: t("add") })]);
+          add.onclick = function () { setQty(it.id, 1); };
+          foot.appendChild(add);
+        }
+        root.appendChild(el("div", { class: "item pxbox" }, [
+          art,
+          el("div", {}, [el("div", { class: "name", text: name }), desc ? el("div", { class: "desc", text: desc }) : null, foot])
+        ]));
+      });
+    });
+  }
+  function renderCartBar() {
+    var tot = cartTotals();
+    $("cartbar").classList.toggle("hidden", tot.n === 0);
+    $("cart-label").textContent = t("cart") + " · " + tot.n + " " + t("pcs");
+    $("cart-sum").textContent = fmt(tot.sum);
+  }
+
+  // ---- delivery location: Telegram's LocationManager (Bot API 8.0+), falling back to the browser
+  function requestLocation(done, fail) {
+    var lm = tg && tg.LocationManager;
+    function viaBrowser() {
+      if (!navigator.geolocation) { fail("na"); return; }
+      navigator.geolocation.getCurrentPosition(
+        function (p) { done(p.coords.latitude, p.coords.longitude); },
+        function () { fail("denied"); },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
+    }
+    if (lm && lm.init) {
+      try {
+        lm.init(function () {
+          if (!lm.isLocationAvailable) { viaBrowser(); return; }
+          lm.getLocation(function (d) { if (d && d.latitude != null) done(d.latitude, d.longitude); else fail("denied"); });
+        });
+      } catch (e) { viaBrowser(); }
+    } else { viaBrowser(); }
+  }
+  function shareLocation() {
+    var lm = tg && tg.LocationManager;
+    if (state.locState === "denied" && lm && lm.openSettings) { lm.openSettings(); return; }
+    state.locState = "wait"; updateLocUI();
+    requestLocation(function (lat, lon) {
+      state.loc = { lat: lat, lon: lon }; state.locState = "ok"; updateLocUI();
+    }, function (why) {
+      state.loc = null; state.locState = why === "na" ? "na" : "denied"; updateLocUI();
+    });
+  }
+  function updateLocUI() {
+    var btn = $("loc-btn"), box = $("loc-status"), lm = tg && tg.LocationManager;
+    box.textContent = "";
+    btn.disabled = state.locState === "wait";
+    $("loc-btn-t").textContent = state.locState === "wait" ? t("loc_wait")
+      : state.locState === "denied" && lm && lm.openSettings ? t("loc_settings") : t("share_loc");
+    if (state.loc) {
+      var url = "https://www.google.com/maps?q=" + state.loc.lat.toFixed(6) + "," + state.loc.lon.toFixed(6);
+      var a = el("a", { href: url, target: "_blank", rel: "noopener", text: t("loc_open") });
+      var clr = el("button", { type: "button", text: t("loc_clear") });
+      clr.onclick = function () { state.loc = null; state.locState = ""; updateLocUI(); };
+      box.appendChild(document.createTextNode(t("loc_got") + ": " + state.loc.lat.toFixed(5) + ", " + state.loc.lon.toFixed(5) + " · "));
+      box.appendChild(a); box.appendChild(clr);
+    } else if (state.locState === "denied") box.textContent = t("loc_denied");
+    else if (state.locState === "na") box.textContent = t("loc_na");
+  }
+
+  // ---- checkout
+  function renderCheckout() {
+    var box = $("lines"); box.textContent = "";
+    cartLines().forEach(function (l) {
+      var name = state.lang === "uz" ? l.item.name_uz : l.item.name;
+      var th = sprite(l.item.sprite, "thumb"); th.width = 36; th.height = 36;
+      box.appendChild(el("div", { class: "row" }, [
+        el("div", { class: "left" }, [th, el("div", {}, [el("div", { class: "t", text: name }), el("div", { class: "s", text: fmt(l.item.price) })])]),
+        stepper(l.item.id, l.qty)
+      ]));
+    });
+    if (!cartLines().length) { showView("menu"); return; }
+    $("sum").textContent = fmt(cartTotals().sum);
+    var seg = $("seg-ful").children;
+    seg[0].textContent = t("pickup"); seg[1].textContent = t("delivery");
+    for (var i = 0; i < seg.length; i++) seg[i].classList.toggle("on", seg[i].getAttribute("data-v") === state.fulfillment);
+    var delivery = state.fulfillment === "delivery";
+    $("addr-wrap").classList.toggle("hidden", !delivery);
+    var note = $("delivery-note"); note.classList.toggle("hidden", !delivery); note.textContent = t("delivery_note");
+    updateLocUI();
+
+    var pay = $("pay"); pay.textContent = "";
+    var methods = [{ v: "cash", title: delivery ? t("cash_delivery") : t("cash_pickup"), hint: t("cash_hint") }];
+    if (state.config && state.config.click_enabled) methods.unshift({ v: "click", title: t("click"), hint: t("click_hint") });
+    if (!methods.some(function (m) { return m.v === state.payment; })) state.payment = methods[0].v;
+    methods.forEach(function (m) {
+      var b = el("button", { type: "button", class: state.payment === m.v ? "on" : "" }, [
+        document.createTextNode(m.title), el("small", { text: m.hint })
+      ]);
+      b.onclick = function () { state.payment = m.v; renderCheckout(); };
+      pay.appendChild(b);
+    });
+    $("submit").textContent = t("place") + " · " + fmt(cartTotals().sum);
+  }
+
+  function showView(v) {
+    ["menu", "checkout", "order"].forEach(function (n) { $("v-" + n).classList.toggle("hidden", n !== v); });
+    $("cartbar").classList.toggle("hidden", v !== "menu" || cartTotals().n === 0);
+    window.scrollTo(0, 0);
+    if (state.orderPoll && v !== "order") { clearInterval(state.orderPoll); state.orderPoll = null; }
+  }
+
+  function normalizePhone(v) {
+    var d = String(v || "").replace(/\D/g, "");
+    if (d.length === 9) d = "998" + d;
+    return d.length === 12 && d.indexOf("998") === 0 ? "+" + d : null;
+  }
+
+  function submit() {
+    if (state.busy) return;
+    var err = $("err"); err.textContent = "";
+    var initData = tg && tg.initData;
+    if (!initData) { err.textContent = t("need_tg"); return; }
+    var name = $("name").value.trim(), phone = $("phone").value, addr = $("address").value.trim();
+    if (!name) { err.textContent = t("name") + "?"; $("name").focus(); return; }
+    if (!normalizePhone(phone)) { err.textContent = "+998 XX XXX XX XX"; $("phone").focus(); return; }
+    if (state.fulfillment === "delivery" && !addr && !state.loc) { err.textContent = t("need_addr"); $("address").focus(); return; }
+    safeSet("shop_name", name); safeSet("shop_phone", phone);
+
+    state.busy = true; $("submit").disabled = true;
+    fetch(API + "/orders?company_id=" + encodeURIComponent(state.config.company_id), {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Telegram-Init-Data": initData },
+      body: JSON.stringify({
+        items: cartLines().map(function (l) { return { id: l.item.id, qty: l.qty }; }),
+        fulfillment: state.fulfillment, payment_method: state.payment,
+        name: name, phone: phone, address: addr, comment: $("comment").value.trim(),
+        location: state.fulfillment === "delivery" && state.loc ? state.loc : null
+      })
+    }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (res) {
+        if (!res.ok) { err.textContent = typeof res.j.detail === "string" ? res.j.detail : "Error"; return; }
+        state.cart = {}; safeSet("shop_cart", "{}");
+        renderCartBar();
+        showOrder(res.j);
+        if (res.j.pay_url) openPay(res.j.pay_url);
+      })
+      .catch(function () { err.textContent = t("fail"); })
+      .then(function () { state.busy = false; $("submit").disabled = false; });
+  }
+  function openPay(url) { if (tg && tg.openLink) tg.openLink(url); else location.href = url; }
+
+  // ---- order status
+  var FLOW = ["new", "accepted", "ready", "done"];
+  function showOrder(payload) {
+    var o = payload.order;
+    showView("order");
+    $("o-num").textContent = "№" + o.number;
+    $("o-sub").textContent = (o.payment_status === "paid" ? t("paid_ok") + " · " : "") + t("sub_" + o.fulfillment) + (o.has_location ? " · " + t("loc_sent") : "");
+    var s = o.status;
+    var label = s === "ready" ? t("s_ready_" + o.fulfillment) : t("s_" + s);
+    var ul = $("steps"); ul.textContent = "";
+    if (s === "cancelled" || s === "expired" || s === "awaiting_payment") {
+      ul.appendChild(el("li", { class: "on" }, [el("i"), el("span", { class: s === "awaiting_payment" ? "" : "bad", text: label })]));
+    } else {
+      var at = FLOW.indexOf(s);
+      var names = [t("st1"), t("st2"), t("st3"), t("st4")];
+      FLOW.forEach(function (k, i) {
+        var cls = i < at ? "past" : (i === at ? "on" : "");
+        ul.appendChild(el("li", { class: cls }, [el("i"), el("span", { text: i === at ? label : names[i] })]));
+      });
+    }
+    var lines = $("o-lines"); lines.textContent = "";
+    o.items.forEach(function (l) {
+      lines.appendChild(el("div", { class: "row" }, [
+        el("div", { class: "t", text: (state.lang === "uz" ? l.name_uz : l.name) + " ×" + l.qty }),
+        el("div", { class: "s", text: fmt(l.qty * l.price) })
+      ]));
+    });
+    $("o-sum").textContent = fmt(o.total);
+    var pay = $("pay-now"); pay.classList.toggle("hidden", !payload.pay_url);
+    pay.textContent = t("pay_now"); pay.onclick = function () { openPay(payload.pay_url); };
+    $("again").textContent = t("again");
+
+    if (state.orderPoll) clearInterval(state.orderPoll);
+    var terminal = { done: 1, cancelled: 1, expired: 1 };
+    if (!terminal[s]) {
+      state.orderPoll = setInterval(function () {
+        fetch(API + "/orders/" + o.id + "?t=" + encodeURIComponent(o.token)).then(function (r) { return r.json(); })
+          .then(function (j) { if (j.order) { showOrder(j); } }).catch(function () {});
+      }, 6000);
+    }
+  }
+
+  function renderAll() {
+    renderMenu(); renderCartBar();
+    if (!$("v-checkout").classList.contains("hidden")) renderCheckout();
+  }
+
+  // ---- start
+  function init() {
+    if (tg) { try { tg.ready(); tg.expand(); tg.setHeaderColor("#FCC904"); tg.setBackgroundColor("#FFF8DC"); } catch (e) {} }
+    setLang(detectLang());
+    $("l-ru").onclick = function () { setLang("ru"); }; $("l-uz").onclick = function () { setLang("uz"); };
+    try { state.cart = JSON.parse(safeGet("shop_cart") || "{}") || {}; } catch (e) { state.cart = {}; }
+    $("name").value = safeGet("shop_name") || (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name) || "";
+    $("phone").value = safeGet("shop_phone") || "";
+
+    $("open-cart").onclick = function () { showView("checkout"); renderCheckout(); };
+    $("back").onclick = function () { showView("menu"); };
+    $("submit").onclick = submit;
+    $("again").onclick = function () { showView("menu"); };
+    $("loc-btn").onclick = shareLocation;
+    Array.prototype.forEach.call($("seg-ful").children, function (b) {
+      b.onclick = function () { state.fulfillment = b.getAttribute("data-v"); renderCheckout(); };
+    });
+
+    fetch(API + "/app" + (company ? "?company_id=" + encodeURIComponent(company) : ""))
+      .then(function (r) { if (!r.ok) throw new Error(); return r.json(); })
+      .then(function (d) {
+        state.config = d.config; state.menu = d.menu;
+        var valid = {}; d.menu.forEach(function (c) { c.items.forEach(function (i) { valid[i.id] = 1; }); });
+        Object.keys(state.cart).forEach(function (id) { if (!valid[id]) delete state.cart[id]; });
+        renderAll();
+        var oid = qs.get("o"), tok = qs.get("t");
+        if (oid && tok) {
+          fetch(API + "/orders/" + encodeURIComponent(oid) + "?t=" + encodeURIComponent(tok)).then(function (r) { return r.json(); })
+            .then(function (j) { if (j.order) showOrder(j); }).catch(function () {});
+        }
+      })
+      .catch(function () { $("menu").textContent = ""; $("menu").appendChild(el("p", { class: "empty", text: t("fail") })); })
+      .then(hideSplash);
+  }
+  init();
+})();
+</script>
+</body>
+</html>

@@ -14,3 +14,5 @@ from app.models.employee import Employee
 from app.models.employee_sighting import EmployeeSighting
 from app.models.camera import Camera
 from app.models.media_asset import MediaAsset
+from app.models.menu_item import MenuItem
+from app.models.shop_order import ShopOrder

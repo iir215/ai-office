@@ -5,6 +5,7 @@ import time
 import uuid
 
 import httpx
+from openai import BadRequestError, NotFoundError, PermissionDeniedError
 
 from app.core.config import settings
 from app.services.branding import overlay_logo_on_image, overlay_logo_on_video
@@ -33,6 +34,7 @@ def _check(resp: httpx.Response) -> httpx.Response:
     raise InstagramError(f"Instagram API {resp.status_code} ({code}): {detail}")
 
 VIDEO_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "videos")
+IMAGE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "images")
 
 
 def _faststart(src_path: str, dst_path: str) -> None:
@@ -47,14 +49,33 @@ def _faststart(src_path: str, dst_path: str) -> None:
     )
 
 
+def _generate_image_bytes(prompt: str) -> bytes:
+    """Renders the post image. OpenAI retires image models on a schedule, so the model is
+    configurable (OPENAI_IMAGE_MODEL) and a second one is tried when the first is gone."""
+    models = [settings.OPENAI_IMAGE_MODEL]
+    if settings.OPENAI_IMAGE_MODEL_FALLBACK and settings.OPENAI_IMAGE_MODEL_FALLBACK != settings.OPENAI_IMAGE_MODEL:
+        models.append(settings.OPENAI_IMAGE_MODEL_FALLBACK)
+
+    last_exc: Exception | None = None
+    for model in models:
+        try:
+            # A hung request once blocked a worker for minutes: bound it.
+            result = client.with_options(timeout=180, max_retries=1).images.generate(
+                model=model,
+                prompt=prompt,
+                size="1024x1024",
+                n=1,
+            )
+            return base64.b64decode(result.data[0].b64_json)
+        except (NotFoundError, PermissionDeniedError, BadRequestError) as exc:
+            # Model retired / not available / parameters rejected: try the next one.
+            print(f"image model {model} failed: {type(exc).__name__}")
+            last_exc = exc
+    raise last_exc
+
+
 def generate_and_host_image(prompt: str, company_id: int) -> str:
-    result = client.images.generate(
-        model="gpt-image-1",
-        prompt=prompt,
-        size="1024x1024",
-        n=1,
-    )
-    image_bytes = base64.b64decode(result.data[0].b64_json)
+    image_bytes = _generate_image_bytes(prompt)
 
     try:
         image_bytes = overlay_logo_on_image(image_bytes, company_id)
@@ -62,14 +83,17 @@ def generate_and_host_image(prompt: str, company_id: int) -> str:
         # The image is already paid for; post it unbranded rather than lose it.
         print(f"logo overlay failed for company {company_id}, using plain image: {exc!r}")
 
-    upload = httpx.post(
-        "https://catbox.moe/user/api.php",
-        data={"reqtype": "fileupload"},
-        files={"fileToUpload": ("post.png", image_bytes, "image/png")},
-        timeout=30,
+    # Hosted on our own server (like the videos): a third-party free image host
+    # (catbox.moe) stopped answering, and Instagram wants a public JPEG URL.
+    os.makedirs(IMAGE_DIR, exist_ok=True)
+    filename = f"{uuid.uuid4().hex}.jpg"
+    subprocess.run(
+        ["ffmpeg", "-y", "-loglevel", "error", "-i", "pipe:0", "-q:v", "2", os.path.join(IMAGE_DIR, filename)],
+        input=image_bytes,
+        check=True,
+        capture_output=True,
     )
-    upload.raise_for_status()
-    return upload.text.strip()
+    return f"{settings.PUBLIC_BASE_URL}/ui/images/{filename}"
 
 
 def create_media_container(company_id: int, image_url: str, caption: str) -> str:

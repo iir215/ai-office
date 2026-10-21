@@ -72,6 +72,10 @@ from app.api.v1.instagram_oauth import router as instagram_oauth_router
 
 app.include_router(instagram_oauth_router)
 
+from app.api.v1.shop import router as shop_router
+
+app.include_router(shop_router)
+
 from fastapi.staticfiles import StaticFiles
 
 app.mount("/ui", StaticFiles(directory="app/static", html=True), name="ui")

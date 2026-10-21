@@ -11,10 +11,12 @@ from app.models.agent import Agent
 from app.models.company import Company
 from app.models.invite import Invite
 from app.models.pending_post import PendingPost
+from app.models.shop_order import ShopOrder
 from app.models.user import User
 from app.services.director import get_or_create_conversation, handle_user_message
 from app.services.instagram import get_permalink, publish_pending
 from app.services.media_library import delete_asset, list_assets, rename_asset, save_photo
+from app.services.shop import apply_action
 from app.services.telegram import answer_callback_query, edit_message, notify_company, send_message
 
 API_URL = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}"
@@ -191,9 +193,41 @@ def try_accept_invite(db, chat_id: int, from_user: dict) -> User | None:
     return user
 
 
+def handle_order_callback(db, callback: dict) -> None:
+    """Team buttons on shop orders: ord:<accept|ready|done|cancel>:<order id>."""
+    callback_id = callback["id"]
+    try:
+        _, action, order_id = callback.get("data", "").split(":")
+        order = db.query(ShopOrder).filter(ShopOrder.id == int(order_id)).first()
+    except ValueError:
+        answer_callback_query(callback_id)
+        return
+    if not order:
+        answer_callback_query(callback_id, "Заказ не найден")
+        return
+
+    # Only people linked to the order's company may change it.
+    sender = str((callback.get("from") or {}).get("id", ""))
+    member = (
+        db.query(User)
+        .filter(User.telegram_chat_id == sender, User.company_id == order.company_id)
+        .first()
+    )
+    if not member:
+        answer_callback_query(callback_id, "Нет доступа")
+        return
+
+    error = apply_action(db, order, action)
+    answer_callback_query(callback_id, error or "Готово")
+
+
 def handle_callback(db, callback: dict) -> None:
     callback_id = callback["id"]
     data = callback.get("data", "")
+
+    if data.startswith("ord:"):
+        handle_order_callback(db, callback)
+        return
 
     try:
         action, pending_id_str = data.split(":")

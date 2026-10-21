@@ -17,6 +17,10 @@ class Settings(BaseSettings):
 
     OPENAI_MODEL: str = "gpt-4o-mini"
 
+    # Image model for post pictures. gpt-image-1 is retired on 2026-10-23.
+    OPENAI_IMAGE_MODEL: str = "gpt-image-2"
+    OPENAI_IMAGE_MODEL_FALLBACK: str = "gpt-image-1.5"
+
     TELEGRAM_BOT_TOKEN: str = ""
 
     SECURITY_AUDIT_INTERVAL_SECONDS: int = 900
@@ -52,6 +56,19 @@ class Settings(BaseSettings):
     MINIMAX_API_KEY: str = ""
 
     PUBLIC_BASE_URL: str = "https://aionbusiness.uz"
+
+    # Customer-facing Telegram bot that opens the ordering Mini App (a different
+    # bot from the internal AION one). Mini App sign-in is validated with its token.
+    SHOP_BOT_TOKEN: str = ""
+
+    # Company whose menu the Mini App shows when no ?c= is given.
+    SHOP_COMPANY_ID: int = 2
+
+    # Click merchant (Shop API) credentials; online payment is offered only when all three are set.
+    CLICK_SERVICE_ID: str = ""
+    CLICK_MERCHANT_ID: str = ""
+    CLICK_SECRET_KEY: str = ""
+    CLICK_MERCHANT_USER_ID: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",

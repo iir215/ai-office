@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bonch Burgers — варианты заставки</title>
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root { --mustard:#FCC904; --ink:#141414; --paper:#FFF8DC; --green:#1F4D3A; --orange:#F26A1B; }
+  * { box-sizing: border-box; border-radius: 0; }
+  html, body { margin: 0; background: #2a2a2a; color: #fff; font-family: "Pixelify Sans", sans-serif; }
+  h1 { font-family: "Press Start 2P", monospace; font-size: 14px; line-height: 1.6; text-align: center; margin: 22px 12px 4px; color: var(--mustard); }
+  .hint { text-align: center; font-size: 17px; margin: 0 12px 18px; color: #ddd; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 26px; max-width: 1100px; margin: 0 auto; padding: 0 16px 40px; justify-items: center; }
+  .cell { width: 300px; }
+  .cell .name { margin: 12px 4px 0; font-size: 19px; font-weight: 700; }
+  .cell .name b { font-family: "Press Start 2P", monospace; background: var(--mustard); color: var(--ink); padding: 6px 8px; margin-right: 8px; font-size: 14px; }
+  .cell .desc { margin: 4px 4px 0; font-size: 16px; color: #ccc; }
+  .cell a { color: var(--mustard); font-size: 16px; margin: 6px 4px 0; display: inline-block; }
+
+  /* a phone-shaped splash screen */
+  .screen { position: relative; width: 300px; height: 520px; background: var(--mustard); overflow: hidden; image-rendering: pixelated;
+    box-shadow: 0 0 0 4px #000, 0 0 0 8px #555; display: flex; flex-direction: column; align-items: center; }
+  .screen.full { position: fixed; inset: 0; width: auto; height: auto; box-shadow: none; z-index: 10; }
+  .screen .top { margin-top: 34px; text-align: center; }
+  .screen .top img.logo { height: 46px; display: block; margin: 0 auto; image-rendering: pixelated; }
+  .screen .by { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; font-weight: 700; font-size: 16px; color: var(--ink); }
+  .screen .by img { width: 18px; height: 18px; image-rendering: pixelated; }
+  .stage { position: relative; flex: 1; width: 100%; display: grid; place-items: center; }
+  .label { font-family: "Press Start 2P", monospace; font-size: 11px; color: var(--ink); text-align: center; line-height: 1.7; margin-bottom: 6px; }
+  .label small { display: block; font-family: "Pixelify Sans", sans-serif; font-size: 15px; font-weight: 500; }
+  .dots::after { content: ""; animation: dots 1.2s steps(1) infinite; }
+  @keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
+  .bottom { width: 100%; padding: 0 28px 34px; }
+  .bar { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; padding: 4px; background: var(--paper); box-shadow: 0 0 0 3px var(--ink); }
+  .bar i { height: 14px; background: #e6dba8; }
+  .bar i.on { background: var(--green); }
+  .band { width: 100%; height: 24px; background: url(sprites/band.png) repeat-x; background-size: 144px 24px; image-rendering: pixelated; }
+  img.px { image-rendering: pixelated; display: block; }
+
+  /* A: burger builds itself */
+  .stackA { position: relative; width: 156px; height: 210px; }
+  .stackA img { position: absolute; left: 0; width: 156px; }
+
+  /* B: bites */
+  #canvB { width: 192px; height: 192px; image-rendering: pixelated; }
+  .crumb { position: absolute; width: 6px; height: 6px; background: #E8962A; animation: fall .6s steps(6) forwards; }
+  @keyframes fall { to { transform: translate(var(--dx), 70px); opacity: 0; } }
+
+  /* C: truck arrives */
+  .sceneC { position: relative; width: 300px; height: 210px; overflow: hidden; }
+  .sceneC .road { position: absolute; left: 0; right: 0; bottom: 0; height: 24px; background: url(sprites/band.png) repeat-x; background-size: 144px 24px; }
+  .sceneC .truck { position: absolute; left: 30px; bottom: 22px; width: 240px; animation: truckC 4.6s infinite; animation-timing-function: steps(14); }
+  .sceneC .bur { position: absolute; left: 112px; bottom: 100px; width: 72px; animation: burC 4.6s infinite; animation-timing-function: steps(6); }
+  .sceneC .spark { position: absolute; width: 8px; height: 8px; background: #fff; box-shadow: 0 0 0 2px var(--ink); animation: sparkC 4.6s infinite steps(1); opacity: 0; }
+  @keyframes truckC { 0% { transform: translateX(-300px); } 32% { transform: translateX(0); } 76% { transform: translateX(0); } 100% { transform: translateX(300px); } }
+  @keyframes burC { 0%, 36% { transform: translateY(70px); opacity: 0; } 37% { opacity: 1; } 48% { transform: translateY(-14px); } 54%, 74% { transform: translateY(0); opacity: 1; } 76%, 100% { transform: translateY(70px); opacity: 0; } }
+  @keyframes sparkC { 0%, 48% { opacity: 0; } 50% { opacity: 1; } 58% { opacity: 0; } 62% { opacity: 1; } 70%, 100% { opacity: 0; } }
+
+  /* D: conveyor */
+  .beltD { position: relative; width: 300px; height: 150px; overflow: hidden; }
+  .trackD { position: absolute; left: 0; top: 18px; display: flex; gap: 22px; animation: beltD 7s infinite steps(49); }
+  .trackD img { width: 72px; height: 72px; flex: none; }
+  .beltD .rail { position: absolute; left: 0; right: 0; top: 100px; height: 20px; background: var(--ink); }
+  .beltD .rail::before { content: ""; position: absolute; inset: 6px 0; background: repeating-linear-gradient(90deg, #777 0 12px, transparent 12px 24px); animation: railD 1s infinite steps(4); }
+  @keyframes beltD { to { transform: translateX(-686px); } }
+  @keyframes railD { to { background-position: -24px 0; } }
+</style>
+</head>
+<body>
+<h1>КАКАЯ ЗАСТАВКА?</h1>
+<p class="hint">Так приложение выглядит при открытии, пока загружается меню. Нажмите «на весь экран», чтобы увидеть как на телефоне.</p>
+<div class="grid" id="grid"></div>
+
+<script>
+(function () {
+  "use strict";
+  var SPR = "sprites/";
+  function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html) e.innerHTML = html; return e; }
+  function img(name, w) { var i = el("img", "px"); i.src = SPR + name + ".png"; if (w) i.style.width = w + "px"; return i; }
+
+  function chrome(stageNodes, label) {
+    var s = el("div", "screen");
+    var top = el("div", "top");
+    var logo = el("img", "logo"); logo.src = "/ui/logos/2.png"; top.appendChild(logo);
+    top.appendChild(el("div", "by", '<span>by</span><img src="' + SPR + 'flame.png" alt=""><b>Baursak</b>'));
+    s.appendChild(top);
+    var stage = el("div", "stage"); stageNodes.forEach(function (n) { stage.appendChild(n); }); s.appendChild(stage);
+    var lab = el("div", "label", '<span class="dots">' + (label || "ЗАГРУЖАЕМ МЕНЮ") + '</span><small>Menyu yuklanmoqda</small>');
+    var bottom = el("div", "bottom"); bottom.appendChild(lab);
+    var bar = el("div", "bar"); var cells = [];
+    for (var i = 0; i < 10; i++) { var c = el("i"); bar.appendChild(c); cells.push(c); }
+    bottom.appendChild(bar); s.appendChild(bottom);
+    return { screen: s, cells: cells, stage: stage };
+  }
+  // endless progress bar: fills one square at a time
+  function runBar(cells, period) {
+    var n = 0;
+    setInterval(function () { n = (n + 1) % 12; cells.forEach(function (c, i) { c.classList.toggle("on", i < n); }); }, period / 12);
+  }
+
+  // ---- A: the burger assembles itself
+  function variantA() {
+    var S = 6;
+    var order = ["bun_bottom", "patty", "cheese", "tomato", "lettuce", "bun_top"];
+    var H = { bun_top: 12, lettuce: 5, tomato: 4, cheese: 5, patty: 6, bun_bottom: 6 };
+    var box = el("div", "stackA");
+    var y = 210; var finals = [];
+    order.forEach(function (n) { y -= H[n] * S - S; finals.push(y - S); });
+    // total cycle 4.8 s
+    var css = "";
+    order.forEach(function (n, k) {
+      var im = img("layer_" + n); im.style.top = finals[k] + "px"; im.style.animation = "dropA" + k + " 4.8s infinite steps(7)";
+      box.appendChild(im);
+      var t0 = 4 + k * 9, t1 = t0 + 7;
+      css += "@keyframes dropA" + k + " { 0%," + t0 + "% { transform: translateY(-330px); opacity: 0; } " + (t0 + 0.1) + "% { opacity: 1; } " + t1 +
+        "%, 78% { transform: translateY(0); opacity: 1; } 82% { transform: translateY(-16px); } 86% { transform: translateY(0); } 92% { opacity: 1; } 94%, 100% { opacity: 0; transform: translateY(0); } }";
+    });
+    var st = el("style"); st.textContent = css; document.head.appendChild(st);
+    var c = chrome([box]); runBar(c.cells, 4800); return c.screen;
+  }
+
+  // ---- B: the burger gets eaten bite by bite
+  function variantB() {
+    var cv = el("canvas"); cv.id = "canvB"; cv.width = 24; cv.height = 24;
+    var ctx = cv.getContext("2d"); ctx.imageSmoothingEnabled = false;
+    var base = new Image(); base.src = SPR + "burger_cheese.png";
+    var holder = el("div"); holder.style.position = "relative"; holder.appendChild(cv);
+    var c = chrome([holder]);
+    var bites = [[21, 8, 4.6], [21, 16, 4.6], [3, 9, 4.6], [3, 17, 4.6], [12, 5, 6.2], [12, 14, 9]];
+    var step = 0;
+    function draw() {
+      ctx.clearRect(0, 0, 24, 24); ctx.drawImage(base, 0, 0);
+      var d = ctx.getImageData(0, 0, 24, 24);
+      for (var k = 0; k < step && k < bites.length; k++) {
+        var b = bites[k];
+        for (var y = 0; y < 24; y++) for (var x = 0; x < 24; x++)
+          if ((x - b[0]) * (x - b[0]) + (y - b[1]) * (y - b[1]) <= b[2] * b[2]) d.data[(y * 24 + x) * 4 + 3] = 0;
+      }
+      ctx.putImageData(d, 0, 0);
+      c.cells.forEach(function (cell, i) { cell.classList.toggle("on", i < Math.round(step / (bites.length + 1) * 10)); });
+    }
+    function crumbs(b) {
+      for (var i = 0; i < 6; i++) {
+        var p = el("div", "crumb"); p.style.left = (b[0] * 8 + (i * 7 - 18)) + "px"; p.style.top = (b[1] * 8 + (i % 2) * 8) + "px";
+        p.style.setProperty("--dx", (i - 3) * 8 + "px"); if (i % 2) p.style.background = "#FCC904";
+        holder.appendChild(p); setTimeout(function (q) { q.remove(); }.bind(null, p), 650);
+      }
+    }
+    base.onload = function () {
+      draw();
+      setInterval(function () {
+        step = step > bites.length ? 0 : step + 1;
+        if (step > 0 && step <= bites.length) crumbs(bites[step - 1]);
+        draw();
+      }, 700);
+    };
+    return c.screen;
+  }
+
+  // ---- C: the food truck drives in and hands out a burger
+  function variantC() {
+    var scene = el("div", "sceneC");
+    scene.appendChild(el("div", "road"));
+    var t = img("truck"); t.className = "px truck"; scene.appendChild(t);
+    var b = img("burger_cheese"); b.className = "px bur"; scene.appendChild(b);
+    [[92, 84], [196, 96], [150, 60]].forEach(function (p, i) {
+      var s = el("div", "spark"); s.style.left = p[0] + "px"; s.style.bottom = p[1] + "px"; s.style.animationDelay = (i * 0.12) + "s"; scene.appendChild(s);
+    });
+    var c = chrome([scene], "ГОТОВИМ ЗАКАЗ"); runBar(c.cells, 4600); return c.screen;
+  }
+
+  // ---- D: food on a conveyor belt
+  function variantD() {
+    var belt = el("div", "beltD");
+    var names = ["burger_cheese", "fries_m", "shake_choco", "hotdog_classic", "drink_cola", "nuggets", "juice_orange"];
+    var track = el("div", "trackD");
+    names.concat(names).forEach(function (n) { track.appendChild(img(n)); });
+    belt.appendChild(track); belt.appendChild(el("div", "rail"));
+    var c = chrome([belt]); runBar(c.cells, 7000); return c.screen;
+  }
+
+  var V = [
+    { k: "A", fn: variantA, t: "Сборка бургера", d: "Слои падают друг на друга: булочка, котлета, сыр, помидор, салат, верх. Бургер подпрыгивает." },
+    { k: "B", fn: variantB, t: "Бургер откусывают", d: "Бургер съедают кусок за куском, с крошками. Полоса загрузки заполняется с каждым укусом." },
+    { k: "C", fn: variantC, t: "Фудтрак приезжает", d: "Наш фудтрак подъезжает, из окошка появляется бургер, искры, уезжает." },
+    { k: "D", fn: variantD, t: "Конвейер с едой", d: "Бургеры, картошка, коктейли, хот-доги и напитки едут по ленте." }
+  ];
+  var grid = document.getElementById("grid");
+  var only = new URLSearchParams(location.search).get("v");
+  if (only) {
+    var v = V.filter(function (x) { return x.k === only.toUpperCase(); })[0];
+    if (v) { var s = v.fn(); s.classList.add("full"); document.body.appendChild(s); document.querySelector("h1").remove(); document.querySelector(".hint").remove(); grid.remove(); return; }
+  }
+  V.forEach(function (v) {
+    var cell = el("div", "cell");
+    cell.appendChild(v.fn());
+    cell.appendChild(el("div", "name", "<b>" + v.k + "</b>" + v.t));
+    cell.appendChild(el("div", "desc", v.d));
+    var a = el("a"); a.href = "?v=" + v.k; a.textContent = "на весь экран"; cell.appendChild(a);
+    grid.appendChild(cell);
+  });
+})();
+</script>
+</body>
+</html>

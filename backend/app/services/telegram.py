@@ -21,6 +21,17 @@ def send_message(chat_id: str, text: str, reply_markup: dict | None = None) -> d
         return None
 
 
+def send_location(chat_id: str, latitude: float, longitude: float, reply_to: int | None = None) -> None:
+    """Sends a map pin (tapping it opens the maps app, handy for a courier)."""
+    if not settings.TELEGRAM_BOT_TOKEN:
+        return
+
+    payload = {"chat_id": chat_id, "latitude": latitude, "longitude": longitude}
+    if reply_to:
+        payload["reply_to_message_id"] = reply_to
+    httpx.post(f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendLocation", json=payload, timeout=10)
+
+
 def edit_message(chat_id: str, message_id: int, text: str, reply_markup: dict | None = None) -> None:
     if not settings.TELEGRAM_BOT_TOKEN:
         return

@@ -43,6 +43,18 @@ services:
       - redis
     restart: unless-stopped
 
+  shop_bot:
+    build: ./backend
+    container_name: aion_shop_bot
+    env_file:
+      - ./backend/.env
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python -m app.shop_bot
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
   security_auditor:
     build: ./backend
     container_name: aion_security_auditor
