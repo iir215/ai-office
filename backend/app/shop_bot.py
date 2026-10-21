@@ -1,8 +1,9 @@
-"""Customer-facing Telegram bot: greets the guest and opens the ordering Mini App.
+"""The Bonch Burgers bot (@bonchburgersbot).
 
-It is a separate bot from the internal AION one (create it in @BotFather, put its token
-into SHOP_BOT_TOKEN). Order notifications to the team are sent by the AION bot; this bot
-only talks to guests (greeting, order status updates).
+For guests: greets them and opens the ordering Mini App, and sends order status updates.
+For the team: add the bot to the kitchen group and send /orders_here there (only a person
+linked to the company in AION can do it); from then on every order arrives in that group
+with Accept / Ready / Done / Cancel buttons. /orders_off in the group stops it.
 """
 import time
 
@@ -10,7 +11,10 @@ import httpx
 
 from app.core.config import settings
 from app.db.session import SessionLocal
-from app.services.shop import expire_unpaid
+from app.models.shop_order import ShopOrder
+from app.models.team_chat import TeamChat
+from app.models.user import User
+from app.services.shop import apply_action, expire_unpaid, team_chats, tg_api
 
 API_URL = f"https://api.telegram.org/bot{settings.SHOP_BOT_TOKEN}"
 
@@ -26,12 +30,7 @@ def app_url() -> str:
 
 
 def call(method: str, **payload) -> dict | None:
-    try:
-        resp = httpx.post(f"{API_URL}/{method}", json=payload, timeout=35)
-        return resp.json()
-    except Exception as exc:
-        print(f"{method} failed: {type(exc).__name__}")
-        return None
+    return tg_api(settings.SHOP_BOT_TOKEN, method, **payload)
 
 
 def get_updates(offset: int) -> list[dict]:
@@ -57,6 +56,89 @@ def reply_start(message: dict) -> None:
         text=HELLO[lang],
         reply_markup={"inline_keyboard": [[{"text": BUTTON[lang], "web_app": {"url": app_url()}}]]},
     )
+
+
+def is_staff(db, user_id: int) -> bool:
+    """Staff = a person linked to this company in AION (their Telegram id is the private chat id)."""
+    return (
+        db.query(User)
+        .filter(User.telegram_chat_id == str(user_id), User.company_id == settings.SHOP_COMPANY_ID)
+        .first()
+        is not None
+    )
+
+
+def handle_group_command(db, message: dict) -> None:
+    chat = message["chat"]
+    text = (message.get("text") or "").strip()
+    if not text.startswith("/"):
+        return
+    cmd = text.split()[0].split("@")[0].lower()
+    if cmd not in ("/orders_here", "/orders_off"):
+        return
+
+    sender = (message.get("from") or {}).get("id")
+    if not sender or not is_staff(db, sender):
+        call("sendMessage", chat_id=chat["id"], text="Эту команду может отправить только сотрудник Bonch Burgers, подключённый в AION.")
+        return
+
+    existing = db.query(TeamChat).filter(TeamChat.chat_id == chat["id"]).first()
+    if cmd == "/orders_here":
+        if existing:
+            call("sendMessage", chat_id=chat["id"], text="Этот чат уже получает заказы Bonch Burgers ✅")
+            return
+        db.add(TeamChat(company_id=settings.SHOP_COMPANY_ID, chat_id=chat["id"], title=chat.get("title")))
+        db.commit()
+        call(
+            "sendMessage",
+            chat_id=chat["id"],
+            text="Готово ✅ Новые заказы Bonch Burgers будут приходить сюда с кнопками «Принять», «Готов», «Выдан», «Отменить». "
+                 "Отключить: /orders_off",
+        )
+    else:
+        if existing:
+            db.delete(existing)
+            db.commit()
+        call("sendMessage", chat_id=chat["id"], text="Заказы в этот чат больше не отправляются.")
+
+
+def handle_callback(db, cb: dict) -> None:
+    """Order buttons pressed in the kitchen group: ord:<accept|ready|done|cancel>:<order id>."""
+    answer = lambda text=None: call("answerCallbackQuery", callback_query_id=cb["id"], **({"text": text} if text else {}))
+    data = cb.get("data", "")
+    if not data.startswith("ord:"):
+        answer()
+        return
+    try:
+        _, action, order_id = data.split(":")
+        order = db.query(ShopOrder).filter(ShopOrder.id == int(order_id)).first()
+    except ValueError:
+        answer()
+        return
+    chat_id = ((cb.get("message") or {}).get("chat") or {}).get("id")
+    if not order or chat_id not in team_chats(db, order.company_id):
+        answer("Нет доступа")
+        return
+    answer(apply_action(db, order, action) or "Готово")
+
+
+def process(update: dict) -> None:
+    db = SessionLocal()
+    try:
+        cb = update.get("callback_query")
+        if cb:
+            handle_callback(db, cb)
+            return
+        message = update.get("message")
+        if not message:
+            return
+        kind = message.get("chat", {}).get("type")
+        if kind == "private":
+            reply_start(message)
+        elif kind in ("group", "supergroup"):
+            handle_group_command(db, message)
+    finally:
+        db.close()
 
 
 def main() -> None:
@@ -96,9 +178,10 @@ def main() -> None:
 
         for update in updates:
             offset = update["update_id"] + 1
-            message = update.get("message")
-            if message and message.get("chat", {}).get("type") == "private":
-                reply_start(message)
+            try:
+                process(update)
+            except Exception as exc:
+                print(f"update handling failed: {type(exc).__name__}")
 
 
 if __name__ == "__main__":

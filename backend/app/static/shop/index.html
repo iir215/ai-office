@@ -7,7 +7,7 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Pixelify+Sans:wght@400;500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
   :root {
     --mustard: #FCC904;
@@ -22,6 +22,9 @@
     --px: 3px;
     --head: "Press Start 2P", "Pixelify Sans", monospace;
     --body: "Pixelify Sans", "Press Start 2P", system-ui, sans-serif;
+    /* ALL-CAPS text: Pixelify Sans draws a Cyrillic capital O wider and taller than the other capitals, */
+    /* so capitals are set in DotGothic16, whose capitals are uniform */
+    --caps: "DotGothic16", "Pixelify Sans", sans-serif;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; border-radius: 0; }
   html, body { overflow-x: hidden; margin: 0; background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.3; font-weight: 500; }
@@ -96,9 +99,9 @@
   .secondary { width: calc(100% - 6px); min-height: 48px; margin-top: 14px; }
 
   .view { padding: 14px 16px 0; max-width: 640px; margin: 0 auto; }
-  .view h1 { font-family: var(--body); font-weight: 700; font-size: 28px; line-height: 1.1; margin: 8px 0 16px; text-transform: uppercase; letter-spacing: .02em; }
+  .view h1 { font-family: var(--caps); font-weight: 400; font-size: 24px; line-height: 1.1; margin: 8px 0 16px; text-transform: uppercase; letter-spacing: .02em; }
   .back { border: 0; background: transparent; font-weight: 700; padding: 8px 0; font-size: 19px; }
-  label.f { display: block; font-family: var(--body); font-weight: 700; font-size: 16px; color: var(--muted); margin: 20px 3px 8px; text-transform: uppercase; letter-spacing: .04em; line-height: 1.3; }
+  label.f { display: block; font-family: var(--caps); font-weight: 400; font-size: 16px; color: var(--muted); margin: 20px 3px 8px; text-transform: uppercase; letter-spacing: .04em; line-height: 1.3; }
   input, textarea { width: calc(100% - 6px); margin: 3px; border: 0; padding: 13px 12px; font-size: 20px; font-weight: 500; background: var(--card); color: var(--ink);
     box-shadow: 0 -3px 0 0 var(--ink), 0 3px 0 0 var(--ink), -3px 0 0 0 var(--ink), 3px 0 0 0 var(--ink); }
   textarea { min-height: 70px; resize: vertical; }
@@ -113,8 +116,8 @@
   .row .s { font-size: 16px; font-weight: 500; color: var(--muted); }
   .row .thumb { width: 36px; height: 36px; margin-right: 8px; }
   .row .left { display: flex; align-items: center; }
-  .total { display: flex; justify-content: space-between; align-items: center; font-family: var(--body); font-weight: 700; font-size: 24px; padding: 18px 0 4px; line-height: 1.3; text-transform: uppercase; }
-  .total span:last-child { font-size: 24px; }
+  .total { display: flex; justify-content: space-between; align-items: center; font-family: var(--caps); font-weight: 400; font-size: 22px; padding: 18px 0 4px; line-height: 1.3; text-transform: uppercase; }
+  .total span:last-child { font-size: 22px; }
   .pay { display: grid; gap: 12px; }
   .pay button { border: 0; background: var(--card); min-height: 62px; padding: 8px 14px; text-align: left; font-weight: 700; font-size: 19px; margin: 3px;
     box-shadow: 0 -3px 0 0 var(--ink), 0 3px 0 0 var(--ink), -3px 0 0 0 var(--ink), 3px 0 0 0 var(--ink); }

@@ -14,6 +14,7 @@ from app.core.config import settings
 from app.models.company import Company
 from app.models.menu_item import MenuItem
 from app.models.shop_order import ShopOrder
+from app.models.team_chat import TeamChat
 from app.services.pos import get_pos
 from app.services.telegram import edit_message, notify_company, send_location
 
@@ -334,6 +335,15 @@ GUEST_TEXT = {
 }
 
 
+def tg_api(token: str, method: str, **payload) -> dict | None:
+    """Telegram Bot API call. Only the exception type is logged: the URL contains the token."""
+    try:
+        return httpx.post(f"https://api.telegram.org/bot{token}/{method}", json=payload, timeout=15).json()
+    except Exception as exc:
+        print(f"telegram {method} failed: {type(exc).__name__}")
+        return None
+
+
 def notify_guest(order: ShopOrder, key: str) -> None:
     if not settings.SHOP_BOT_TOKEN:
         return
@@ -341,26 +351,45 @@ def notify_guest(order: ShopOrder, key: str) -> None:
     if not texts:
         return
     text = texts.get(order.lang, texts["ru"]).format(n=order.number)
-    try:
-        httpx.post(
-            f"https://api.telegram.org/bot{settings.SHOP_BOT_TOKEN}/sendMessage",
-            json={"chat_id": order.tg_user_id, "text": text},
-            timeout=10,
-        )
-    except Exception as exc:
-        print(f"notify_guest failed: {type(exc).__name__}")
+    tg_api(settings.SHOP_BOT_TOKEN, "sendMessage", chat_id=order.tg_user_id, text=text)
+
+
+def team_chats(db: Session, company_id: int) -> list[int]:
+    return [c.chat_id for c in db.query(TeamChat).filter(TeamChat.company_id == company_id).all()]
+
+
+def send_to_team(db: Session, company_id: int, text: str, reply_markup: dict | None = None) -> list[dict]:
+    """Groups registered with the shop bot (/orders_here) get the message through the shop bot.
+    With no group registered, or if every send fails, it falls back to the AION company chats,
+    so an order never goes unseen. Each result records which bot sent it (needed to edit it later)."""
+    sent: list[dict] = []
+    if settings.SHOP_BOT_TOKEN:
+        for chat_id in team_chats(db, company_id):
+            payload = {"chat_id": chat_id, "text": text}
+            if reply_markup is not None:
+                payload["reply_markup"] = reply_markup
+            res = tg_api(settings.SHOP_BOT_TOKEN, "sendMessage", **payload)
+            if res and res.get("ok"):
+                sent.append({"chat_id": str(chat_id), "message_id": res["result"]["message_id"], "bot": "shop"})
+    if not sent:
+        sent = [{**m, "bot": "aion"} for m in notify_company(db, company_id, text, reply_markup)]
+    return sent
 
 
 def order_ready_for_kitchen(db: Session, order: ShopOrder) -> None:
     """Cash order placed, or Click payment confirmed: tell the team and the POS hook."""
     try:
-        sent = notify_company(db, order.company_id, team_text(order), team_keyboard(order))
+        sent = send_to_team(db, order.company_id, team_text(order), team_keyboard(order))
         order.notified_messages = json.dumps(sent)
         db.commit()
         if order.latitude is not None:
             for m in sent:
                 try:
-                    send_location(m["chat_id"], order.latitude, order.longitude, reply_to=m["message_id"])
+                    if m.get("bot") == "shop":
+                        tg_api(settings.SHOP_BOT_TOKEN, "sendLocation", chat_id=m["chat_id"], latitude=order.latitude,
+                               longitude=order.longitude, reply_to_message_id=m["message_id"])
+                    else:
+                        send_location(m["chat_id"], order.latitude, order.longitude, reply_to=m["message_id"])
                 except Exception as exc:
                     print(f"send_location failed for order {order.id}: {type(exc).__name__}")
     except Exception as exc:
@@ -375,7 +404,11 @@ def order_ready_for_kitchen(db: Session, order: ShopOrder) -> None:
 def refresh_team_messages(order: ShopOrder) -> None:
     for m in json.loads(order.notified_messages or "[]"):
         try:
-            edit_message(m["chat_id"], m["message_id"], team_text(order), team_keyboard(order))
+            if m.get("bot") == "shop":
+                tg_api(settings.SHOP_BOT_TOKEN, "editMessageText", chat_id=m["chat_id"], message_id=m["message_id"],
+                       text=team_text(order), reply_markup=team_keyboard(order))
+            else:
+                edit_message(m["chat_id"], m["message_id"], team_text(order), team_keyboard(order))
         except Exception:
             pass
 
@@ -409,7 +442,7 @@ def apply_action(db: Session, order: ShopOrder, action: str) -> str | None:
         notify_guest(order, "cancelled")
         if order.payment_method == "click" and order.payment_status == "paid":
             try:
-                notify_company(db, order.company_id, f"💸 Заказ №{order.number} отменён после оплаты Click: верните {money(order.total)} в кабинете Click.")
+                send_to_team(db, order.company_id, f"💸 Заказ №{order.number} отменён после оплаты Click: верните {money(order.total)} в кабинете Click.")
             except Exception:
                 pass
     return None
