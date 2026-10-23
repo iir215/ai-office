@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bonch Burgers — варианты шрифтов</title>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Geologica:wght@400;500;700&family=Handjet:wght@400;600;800&family=Pixelify+Sans:wght@500;600;700&family=Press+Start+2P&family=Russo+One&family=Tiny5&display=swap" rel="stylesheet">
+<style>
+  :root { --mustard:#FCC904; --mustard-light:#FFE27A; --ink:#141414; --paper:#FFF8DC; --green:#1F4D3A; --orange:#F26A1B; --muted:#4A4023; }
+  * { box-sizing: border-box; border-radius: 0; }
+  body { margin: 0; background: #2a2a2a; color: #fff; font-family: system-ui, sans-serif; }
+  h1 { font-family: "Press Start 2P", monospace; font-size: 14px; line-height: 1.6; text-align: center; margin: 22px 12px 4px; color: var(--mustard); }
+  .hint { text-align: center; font-size: 16px; margin: 0 12px 18px; color: #ddd; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 28px; max-width: 1200px; margin: 0 auto; padding: 0 14px 40px; justify-items: center; }
+  .cell { width: 330px; }
+  .tag { display: flex; gap: 10px; align-items: baseline; margin: 0 0 8px; font-size: 18px; font-weight: 700; }
+  .tag b { background: var(--mustard); color: var(--ink); padding: 4px 9px; font-family: "Press Start 2P", monospace; font-size: 14px; }
+  .tag span { font-weight: 400; color: #ccc; font-size: 15px; }
+
+  .card { background: var(--paper); color: var(--ink); padding: 14px 14px 18px; image-rendering: pixelated; }
+  .box { background: #fff; margin: 3px; padding: 12px; box-shadow: 0 -3px 0 0 var(--ink), 0 3px 0 0 var(--ink), -3px 0 0 0 var(--ink), 3px 0 0 0 var(--ink), 7px 7px 0 0 rgba(20,20,20,.22); }
+  .plate { display: inline-block; position: relative; background: var(--mustard); padding: 11px 16px 11px 22px; margin: 6px 3px 16px;
+    box-shadow: 0 -3px 0 0 var(--ink), 0 3px 0 0 var(--ink), -3px 0 0 0 var(--ink), 3px 0 0 0 var(--ink), 6px 6px 0 0 rgba(20,20,20,.25); }
+  .plate::before { content: ""; position: absolute; left: 6px; top: 50%; width: 6px; height: 6px; margin-top: -3px; background: var(--paper); box-shadow: 0 0 0 2px var(--ink); }
+  .plate::after { content: ""; position: absolute; right: -5px; top: -5px; width: 9px; height: 9px; background: var(--orange); box-shadow: 0 0 0 2px var(--ink); }
+  .plate h2 { margin: 0; font-family: var(--h); font-weight: var(--hw, 400); font-size: var(--hs, 13px); text-transform: uppercase; letter-spacing: .02em; }
+  .item { display: grid; grid-template-columns: 70px 1fr; gap: 12px; align-items: center; }
+  .art { width: 70px; height: 70px; background: var(--mustard-light); display: grid; place-items: center; box-shadow: inset 0 0 0 3px var(--ink); }
+  .art img { width: 54px; height: 54px; image-rendering: pixelated; }
+  .name { font-family: var(--b); font-weight: var(--bw, 700); font-size: var(--ns, 20px); line-height: 1.15; }
+  .desc { font-family: var(--b); font-weight: 500; font-size: var(--ds, 16px); color: var(--muted); margin-top: 4px; line-height: 1.25; }
+  .foot { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; gap: 8px; flex-wrap: wrap; }
+  .price { font-family: var(--b); font-weight: var(--bw, 700); font-size: var(--ns, 20px); }
+  .btn { border: 0; background: var(--mustard); padding: 8px 12px; min-height: 42px; margin: 3px; font-family: var(--b); font-weight: var(--bw, 700); font-size: var(--bs, 17px); color: var(--ink);
+    box-shadow: 0 -3px 0 0 var(--ink), 0 3px 0 0 var(--ink), -3px 0 0 0 var(--ink), 3px 0 0 0 var(--ink), 3px 6px 0 0 var(--ink); }
+  .sect { font-family: var(--c); font-weight: var(--cw, 400); font-size: var(--cs, 22px); text-transform: uppercase; margin: 22px 3px 4px; line-height: 1.15; }
+  .label { font-family: var(--c); font-weight: var(--cw, 400); font-size: var(--ls, 16px); color: var(--muted); text-transform: uppercase; margin: 14px 3px 6px; letter-spacing: .04em; }
+  .pay { background: var(--mustard); padding: 9px 12px; margin: 3px; font-family: var(--b); font-weight: var(--bw, 700); font-size: 18px; box-shadow: 0 -3px 0 0 var(--ink), 0 3px 0 0 var(--ink), -3px 0 0 0 var(--ink), 3px 0 0 0 var(--ink); }
+  .pay small { display: block; font-weight: 500; font-size: 15px; color: var(--muted); }
+  .buy { display: block; width: calc(100% - 6px); margin: 16px 3px 0; background: var(--ink); color: var(--mustard); border: 0; padding: 14px; font-family: var(--b); font-weight: var(--bw, 700); font-size: 19px; text-align: left;
+    box-shadow: 0 0 0 3px var(--ink), 6px 6px 0 3px var(--green); display: flex; justify-content: space-between; }
+  .uz { font-family: var(--b); font-size: 16px; margin: 14px 3px 0; color: var(--muted); font-weight: 500; }
+
+  .v1 { --h: "Press Start 2P"; --b: "Pixelify Sans"; --c: "Pixelify Sans"; --cw: 700; }
+  .v2 { --h: "Tiny5"; --hs: 22px; --b: "Tiny5"; --bw: 400; --ns: 24px; --ds: 19px; --bs: 20px; --c: "Tiny5"; --cs: 26px; --ls: 19px; }
+  .v3 { --h: "Handjet"; --hw: 800; --hs: 26px; --b: "Handjet"; --bw: 700; --ns: 26px; --ds: 21px; --bs: 22px; --c: "Handjet"; --cw: 800; --cs: 30px; --ls: 21px; }
+  .v4 { --h: "Press Start 2P"; --b: "Geologica"; --bw: 700; --c: "Press Start 2P"; --cs: 15px; --ls: 11px; --ns: 18px; --ds: 15px; --bs: 16px; }
+  .v5 { --h: "Russo One"; --hs: 17px; --b: "Geologica"; --bw: 700; --c: "Russo One"; --cs: 22px; --ls: 14px; --ns: 18px; --ds: 15px; --bs: 16px; }
+  .v6 { --h: "DotGothic16"; --hs: 15px; --b: "Geologica"; --bw: 700; --c: "DotGothic16"; --cs: 21px; --ls: 15px; --ns: 18px; --ds: 15px; --bs: 16px; }
+</style>
+</head>
+<body>
+<h1>КАКОЙ ШРИФТ?</h1>
+<p class="hint">Один и тот же кусок приложения в шести вариантах. Смотрите на телефоне, обращайте внимание на заглавную «О» и на мелкий текст.</p>
+<div class="grid" id="grid"></div>
+<script>
+(function () {
+  var V = [
+    { k: 1, t: "Сейчас", d: "Pixelify Sans везде. Заглавные «О» крупнее остальных." },
+    { k: 2, t: "Tiny5", d: "Компактный пиксельный шрифт, ровные заглавные." },
+    { k: 3, t: "Handjet", d: "Пиксель в стиле светодиодного табло, узкий и высокий." },
+    { k: 4, t: "8-бит + чистый текст", d: "Заголовки Press Start 2P, остальной текст чистым шрифтом Geologica." },
+    { k: 5, t: "Блочный + чистый", d: "Заголовки Russo One (плотные, блочные), текст Geologica." },
+    { k: 6, t: "Точки + чистый", d: "Заголовки DotGothic16 (как матричный дисплей), текст Geologica." }
+  ];
+  var grid = document.getElementById("grid");
+  V.forEach(function (v) {
+    var cell = document.createElement("div"); cell.className = "cell";
+    cell.innerHTML =
+      '<div class="tag"><b>' + v.k + '</b>' + v.t + '</div><div class="tag"><span>' + v.d + '</span></div>' +
+      '<div class="card v' + v.k + '">' +
+        '<div class="plate"><h2>Бургеры</h2></div>' +
+        '<div class="box item"><div class="art"><img src="sprites/burger_cheese.png" alt=""></div><div>' +
+          '<div class="name">Чизбургер</div><div class="desc">Говяжья котлета, сыр, салат, томат, лук, соус</div>' +
+          '<div class="foot"><div class="price">35 000 сум</div><button class="btn" type="button">+ Добавить</button></div></div></div>' +
+        '<div class="sect">Оформление заказа</div>' +
+        '<div class="label">Оплата</div><div class="pay">Наличными при получении<small>Оплатите на месте</small></div>' +
+        '<div class="label">Адрес или ориентир</div>' +
+        '<button class="buy" type="button"><span>Оформить заказ</span><span>93 000 сум</span></button>' +
+        '<div class="uz">Qo‘shish · Buyurtma berish · Yetkazib berish</div>' +
+      '</div>';
+    grid.appendChild(cell);
+  });
+})();
+</script>
+</body>
+</html>

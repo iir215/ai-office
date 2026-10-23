@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bonch Burgers — маскот: варианты</title>
+<link href="https://fonts.googleapis.com/css2?family=Handjet:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --mustard:#FCC904; --mustard-light:#FFE27A; --ink:#141414; --paper:#FFF8DC; --green:#1F4D3A; --orange:#F26A1B; --muted:#4A4023; --f: "Handjet", system-ui, sans-serif; }
+  * { box-sizing: border-box; border-radius: 0; }
+  html, body { margin: 0; background: #2a2a2a; color: #fff; font-family: var(--f); font-weight: 600; font-size: 21px; }
+  h1 { font-size: 32px; font-weight: 800; text-align: center; margin: 22px 12px 2px; color: var(--mustard); letter-spacing: .03em; }
+  h2 { font-size: 28px; font-weight: 800; margin: 34px 16px 4px; color: var(--mustard); max-width: 1200px; margin-left: auto; margin-right: auto; padding: 0 16px; }
+  .hint { text-align: center; margin: 0 12px 6px; color: #ddd; font-size: 21px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; max-width: 1200px; margin: 0 auto; padding: 8px 16px 30px; justify-items: center; }
+  .cell { width: 300px; }
+  .tag { display: flex; gap: 10px; align-items: baseline; margin: 0 0 4px; font-size: 26px; font-weight: 800; }
+  .tag b { background: var(--mustard); color: var(--ink); padding: 0 9px; font-size: 24px; }
+  .dsc { color: #ccc; font-size: 20px; line-height: 1.15; margin: 0 0 10px; min-height: 46px; }
+
+  /* the phone */
+  .phone { position: relative; width: 300px; height: 560px; background: var(--paper); color: var(--ink); overflow: hidden; box-shadow: 0 0 0 4px #000, 0 0 0 8px #555; }
+  .phone img { display: block; }
+  .px { image-rendering: pixelated; }
+  .hd { background: var(--mustard); text-align: center; padding: 14px 10px 6px; position: relative; }
+  .hd img.logo { height: 38px; margin: 0 auto; image-rendering: pixelated; }
+  .hd .by { display: inline-flex; align-items: center; gap: 5px; font-weight: 800; font-size: 17px; margin-top: 3px; }
+  .hd .by img { width: 16px; height: 16px; image-rendering: pixelated; }
+  .band { height: 18px; background: url(sprites/band.png) repeat-x; background-size: 108px 18px; image-rendering: pixelated; }
+  .chips { display: flex; gap: 8px; padding: 10px 10px; border-bottom: 3px solid var(--ink); overflow: hidden; }
+  .chip { flex: none; background: #fff; padding: 2px 8px; font-size: 18px; font-weight: 700; box-shadow: 0 -2px 0 0 var(--ink), 0 2px 0 0 var(--ink), -2px 0 0 0 var(--ink), 2px 0 0 0 var(--ink); margin: 2px; display: flex; align-items: center; gap: 4px; }
+  .chip img { width: 20px; height: 20px; }
+  .box { background: #fff; margin: 3px; box-shadow: 0 -3px 0 0 var(--ink), 0 3px 0 0 var(--ink), -3px 0 0 0 var(--ink), 3px 0 0 0 var(--ink), 6px 6px 0 0 rgba(20,20,20,.22); }
+  .item { display: grid; grid-template-columns: 56px 1fr; gap: 9px; padding: 9px; margin: 12px 10px; align-items: center; }
+  .item .art { width: 56px; height: 56px; background: var(--mustard-light); display: grid; place-items: center; box-shadow: inset 0 0 0 3px var(--ink); }
+  .item .art img { width: 44px; height: 44px; }
+  .item .n { font-weight: 800; font-size: 21px; line-height: 1; }
+  .item .p { font-weight: 800; font-size: 19px; }
+  .btn { border: 0; background: var(--mustard); font-family: var(--f); font-weight: 800; font-size: 19px; padding: 4px 11px; margin: 3px; color: var(--ink);
+    box-shadow: 0 -3px 0 0 var(--ink), 0 3px 0 0 var(--ink), -3px 0 0 0 var(--ink), 3px 0 0 0 var(--ink), 3px 6px 0 0 var(--ink); }
+  .cart { position: absolute; left: 0; right: 0; bottom: 0; background: var(--paper); border-top: 3px solid var(--ink); padding: 8px 12px 10px; }
+  .cart div { background: var(--ink); color: var(--mustard); display: flex; justify-content: space-between; padding: 8px 12px; font-weight: 800; font-size: 22px; box-shadow: 0 0 0 3px var(--ink), 5px 5px 0 3px var(--green); margin: 3px; }
+  .pic { box-shadow: 0 -3px 0 0 var(--ink), 0 3px 0 0 var(--ink), -3px 0 0 0 var(--ink), 3px 0 0 0 var(--ink), 6px 6px 0 0 rgba(20,20,20,.3); }
+  .bubble { position: relative; background: #fff; padding: 8px 11px; font-weight: 800; font-size: 23px; line-height: 1; box-shadow: 0 -3px 0 0 var(--ink), 0 3px 0 0 var(--ink), -3px 0 0 0 var(--ink), 3px 0 0 0 var(--ink); }
+  .bubble small { display: block; font-weight: 600; font-size: 17px; color: var(--muted); margin-top: 4px; line-height: 1.05; }
+  .bubble.tailR::after { content: ""; position: absolute; right: -12px; top: 22px; width: 8px; height: 8px; background: #fff; box-shadow: 3px 0 0 0 var(--ink), 0 3px 0 0 var(--ink), 0 -3px 0 0 var(--ink); }
+  .bubble.tailB::after { content: ""; position: absolute; left: 24px; bottom: -11px; width: 8px; height: 8px; background: #fff; box-shadow: 3px 0 0 0 var(--ink), -3px 0 0 0 var(--ink), 0 3px 0 0 var(--ink); }
+  .bob { animation: bob 1.2s steps(2) infinite; }
+  @keyframes bob { 0% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+  .lab { text-align: center; font-weight: 800; font-size: 25px; line-height: 1; }
+  .lab small { display: block; font-weight: 600; font-size: 18px; margin-top: 2px; }
+  .lab .dots::after { content: ""; animation: dots 1.2s steps(1) infinite; }
+  @keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
+  .pbar { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; padding: 4px; background: var(--paper); box-shadow: 0 0 0 3px var(--ink); margin: 3px; }
+  .pbar i { height: 13px; background: #e6dba8; animation: fill 3.6s steps(1) infinite; }
+  .pbar i:nth-child(1){animation-delay:0s}.pbar i:nth-child(2){animation-delay:.3s}.pbar i:nth-child(3){animation-delay:.6s}.pbar i:nth-child(4){animation-delay:.9s}.pbar i:nth-child(5){animation-delay:1.2s}
+  .pbar i:nth-child(6){animation-delay:1.5s}.pbar i:nth-child(7){animation-delay:1.8s}.pbar i:nth-child(8){animation-delay:2.1s}.pbar i:nth-child(9){animation-delay:2.4s}.pbar i:nth-child(10){animation-delay:2.7s}
+  @keyframes fill { 0% { background: #e6dba8; } 1%, 90% { background: var(--green); } 100% { background: #e6dba8; } }
+
+  /* A1: hero banner */
+  .nav { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 700px; margin: 14px auto 0; padding: 0 12px; }
+  .nav a { background: var(--mustard); color: var(--ink); text-decoration: none; font-weight: 800; font-size: 24px; padding: 2px 12px; margin: 3px;
+    box-shadow: 0 -3px 0 0 #000, 0 3px 0 0 #000, -3px 0 0 0 #000, 3px 0 0 0 #000; }
+  .nav .sep { width: 100%; height: 0; }
+  .open { display: inline-block; margin: 12px 0 0; color: var(--mustard); font-size: 23px; font-weight: 800; text-decoration: underline; }
+  .fullwrap { position: fixed; left: 0; top: 0; z-index: 5; transform-origin: 0 0; overflow: hidden; background: var(--paper); }
+  .fullwrap .phone { width: 300px; height: 100%; box-shadow: none; }
+  .backbtn { position: fixed; right: 8px; top: 8px; z-index: 20; background: #fff; color: var(--ink); text-decoration: none; font-weight: 800; font-size: 22px; padding: 1px 10px;
+    box-shadow: 0 -3px 0 0 #000, 0 3px 0 0 #000, -3px 0 0 0 #000, 3px 0 0 0 #000; }
+  .a1 .ban { position: relative; height: 150px; margin: 12px 12px 6px; background: var(--mustard); box-shadow: 0 -3px 0 0 var(--ink), 0 3px 0 0 var(--ink), -3px 0 0 0 var(--ink), 3px 0 0 0 var(--ink), 6px 6px 0 0 var(--green); }
+  .a1 .ban .bubble { position: absolute; left: 10px; top: 16px; width: 148px; }
+  .a1 .ban img.hero { position: absolute; right: 2px; bottom: 0; height: 190px; image-rendering: auto; clip-path: inset(0 0 0 0); }
+  /* A2: welcome dialog */
+  .a2 .dim { position: absolute; inset: 0; background: rgba(20,20,20,.6); display: grid; place-items: center; }
+  .a2 .dlg { position: relative; width: 252px; background: #fff; padding: 82px 14px 14px; text-align: center; margin-top: 30px; box-shadow: 0 -3px 0 0 var(--ink), 0 3px 0 0 var(--ink), -3px 0 0 0 var(--ink), 3px 0 0 0 var(--ink), 7px 7px 0 0 var(--mustard); }
+  .a2 .dlg img.bust { position: absolute; left: 50%; top: -62px; margin-left: -62px; width: 124px; height: 124px; object-fit: cover; object-position: 50% 12%; }
+  .a2 .dlg h3 { margin: 0 0 4px; font-size: 30px; font-weight: 800; line-height: 1; }
+  .a2 .dlg p { margin: 0 0 10px; font-size: 21px; line-height: 1.05; color: var(--muted); }
+  .a2 .dlg .btn { width: calc(100% - 6px); padding: 7px; font-size: 23px; }
+  .a2 .dlg .skip { font-size: 17px; margin-top: 8px; color: var(--muted); font-weight: 600; }
+  /* A3: floating helper */
+  .a3 .help { position: absolute; right: 10px; bottom: 76px; display: flex; flex-direction: column; align-items: flex-end; gap: 14px; }
+  .a3 .help img { width: 74px; height: 74px; object-fit: cover; object-position: 50% 15%; background: var(--mustard); }
+  .a3 .help .bubble { width: 176px; font-size: 22px; }
+  .a3 .help .bubble.tailB::after { left: auto; right: 26px; }
+  /* A4: reactions on the order screen */
+  .a4 .st { padding: 14px 16px; text-align: center; }
+  .a4 .st .num { display: inline-block; background: var(--mustard); font-weight: 800; font-size: 40px; padding: 2px 16px; box-shadow: 0 -3px 0 0 var(--ink), 0 3px 0 0 var(--ink), -3px 0 0 0 var(--ink), 3px 0 0 0 var(--ink), 6px 6px 0 0 var(--green); margin: 6px 0 12px; }
+  .a4 .st .react { width: 150px; height: 150px; object-fit: cover; margin: 6px auto 4px; }
+  .a4 .st h3 { margin: 4px 0 0; font-size: 31px; font-weight: 800; line-height: 1; }
+  .a4 .st p { margin: 2px 0 0; font-size: 21px; color: var(--muted); }
+  .a4 .tabs { display: flex; justify-content: center; gap: 6px; margin-top: 12px; }
+  .a4 .tabs span { font-size: 17px; background: #fff; padding: 0 7px; box-shadow: 0 -2px 0 0 var(--ink), 0 2px 0 0 var(--ink), -2px 0 0 0 var(--ink), 2px 0 0 0 var(--ink); margin: 2px; font-weight: 700; }
+  .a4 .tabs span.on { background: var(--mustard); }
+
+  /* splash screens */
+  .spl { background: var(--mustard); display: flex; flex-direction: column; align-items: center; }
+  .spl .hd { background: transparent; padding-top: 26px; }
+  .spl .stage { flex: 1; width: 100%; display: grid; place-items: center; position: relative; }
+  .spl .bot { width: 100%; padding: 0 26px 26px; }
+  /* S1: mascot walks in */
+  .s1 .walker { position: absolute; bottom: 6px; left: 0; height: 250px; animation: walk 4s infinite; animation-timing-function: steps(12); }
+  @keyframes walk { 0% { transform: translateX(-230px); } 38% { transform: translateX(46px); } 92% { transform: translateX(46px); } 100% { transform: translateX(46px); opacity: 0; } }
+  .s1 .hi { position: absolute; right: 14px; top: 20px; animation: hi 4s infinite steps(1); opacity: 0; }
+  @keyframes hi { 0%, 38% { opacity: 0; } 40%, 92% { opacity: 1; } 100% { opacity: 0; } }
+  /* S2: conveyor + mascot */
+  .s2 .belt { position: relative; width: 300px; height: 90px; overflow: hidden; margin-top: 10px; }
+  .s2 .trk { position: absolute; left: 0; top: 4px; display: flex; gap: 22px; animation: beltS 7s infinite steps(49); }
+  .s2 .trk img { width: 56px; height: 56px; flex: none; image-rendering: pixelated; }
+  @keyframes beltS { to { transform: translateX(-546px); } }
+  .s2 .rail { position: absolute; left: 0; right: 0; top: 64px; height: 16px; background: var(--ink); }
+  .s2 .rail::before { content: ""; position: absolute; inset: 5px 0; background: repeating-linear-gradient(90deg, #777 0 10px, transparent 10px 20px); animation: railS 1s infinite steps(4); }
+  @keyframes railS { to { background-position: -20px 0; } }
+  .s2 .mc { width: 150px; height: 150px; object-fit: cover; object-position: 50% 10%; }
+  /* S3: at the grill */
+  .s3 .grill { width: 252px; height: 255px; object-fit: cover; }
+  .s3 .steam { position: absolute; width: 14px; height: 14px; background: rgba(255,255,255,.85); box-shadow: 0 0 0 3px rgba(255,255,255,.35); animation: up 1.6s infinite steps(8); opacity: 0; }
+  @keyframes up { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(-70px); opacity: 0; } }
+  /* S4: expressions in turn */
+  .s4 .cy { position: relative; width: 190px; height: 212px; }
+  .s4 .cy img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; animation: cyc 2.4s infinite steps(1); }
+  .s4 .cy img:nth-child(2) { animation-delay: .6s } .s4 .cy img:nth-child(3) { animation-delay: 1.2s } .s4 .cy img:nth-child(4) { animation-delay: 1.8s }
+  @keyframes cyc { 0% { opacity: 1; } 25% { opacity: 0; } 100% { opacity: 0; } }
+</style>
+</head>
+<body>
+<h1>МАСКОТ В ПРИЛОЖЕНИИ</h1>
+<p class="hint">Макеты вариантов. Само приложение не менялось. Смотрите на телефоне.</p>
+
+<h2>Приветствие в приложении</h2>
+<div class="grid" id="appGrid"></div>
+
+<h2>Заставка при открытии</h2>
+<div class="grid" id="splGrid"></div>
+
+<script>
+(function () {
+  var M = "mascot/", S = "sprites/";
+  function el(c, h) { var d = document.createElement("div"); d.className = c; d.innerHTML = h; return d; }
+  function header() { return '<div class="hd"><img class="logo" src="/ui/logos/2.png" alt=""><br><span class="by">by <img src="' + S + 'flame.png" alt=""> Baursak</span></div><div class="band"></div>'; }
+  function chips() { return '<div class="chips"><div class="chip"><img src="' + S + 'burger_cheese.png" alt="">Бургеры</div><div class="chip"><img src="' + S + 'hotdog_classic.png" alt="">French hotdog</div><div class="chip"><img src="' + S + 'fries_m.png" alt="">Фри</div></div>'; }
+  function item(sp, n, p) { return '<div class="box item"><div class="art"><img src="' + S + sp + '.png" alt=""></div><div><div class="n">' + n + '</div><div style="display:flex;justify-content:space-between;align-items:center"><span class="p">' + p + '</span><button class="btn" type="button">+ Добавить</button></div></div></div>'; }
+  function cart() { return '<div class="cart"><div><span>Корзина · 2 шт.</span><span>65 000 сум</span></div></div>'; }
+  function bar() { var i = ""; for (var k = 0; k < 10; k++) i += "<i></i>"; return '<div class="pbar">' + i + '</div>'; }
+  function cell(k, t, d, phone) { var c = el("cell", '<div class="tag"><b>' + k + '</b>' + t + '</div><div class="dsc">' + d + '</div>'); c.appendChild(phone); c.appendChild(el('', '<a class="open" href="?v=' + k + '">Открыть на весь экран →</a>')); return c; }
+
+  var app = document.getElementById("appGrid"), spl = document.getElementById("splGrid");
+
+  // A1 hero banner on top of the menu
+  var a1 = el("phone a1", header() + '<div class="ban"><div class="bubble tailR">Привет! Что приготовить сегодня?<small>Выбирай блюдо, я уже у гриля</small></div><img class="hero" src="' + M + 'hero.jpg" alt=""></div>' + chips() + item("burger_cheese", "Чизбургер", "35 000 сум") + item("burger_double", "Двойной чизбургер", "45 000 сум") + cart());
+  app.appendChild(cell("A1", "Герой-баннер", "Маскот с бургером в рост над меню и реплика-пузырь. Виден сразу, но занимает место: можно убирать после первого заказа.", a1));
+
+  // A2 welcome dialog at first open of the day
+  var a2 = el("phone a2", header() + chips() + item("burger_cheese", "Чизбургер", "35 000 сум") + item("burger_double", "Двойной чизбургер", "45 000 сум") + cart() +
+    '<div class="dim"><div class="dlg"><img class="bust pic bob" src="' + M + 'bust_thumb.jpg" alt=""><h3>Привет! Я Bonch</h3><p>Выбирай блюда, а я приготовлю быстро и вкусно.</p><button class="btn" type="button">Смотреть меню</button><div class="skip">Показывается один раз в день</div></div></div>');
+  app.appendChild(cell("A2", "Окно приветствия", "При первом открытии за день: маскот-голова в диалоге, одна кнопка. Лишь потом меню.", a2));
+
+  // A3 floating helper with tips
+  var a3 = el("phone a3", header() + chips() + item("burger_cheese", "Чизбургер", "35 000 сум") + item("burger_double", "Двойной чизбургер", "45 000 сум") + item("fries_m", "Картофель фри", "15 000 сум") + cart() +
+    '<div class="help"><div class="bubble tailB">Попробуй двойной чизбургер!</div><img class="pic bob" src="' + M + 'bust_laugh.jpg" alt=""></div>');
+  app.appendChild(cell("A3", "Маскот-помощник", "Маленький маскот в углу с подсказками («возьми картошку», «есть скидка студентам»). Не мешает, но всегда рядом.", a3));
+
+  // A4 reactions on the order screen
+  var a4 = el("phone a4", header() + '<div class="st"><div style="font-weight:800;font-size:22px">Ваш заказ</div><div class="num">№12</div><img class="react pic" src="' + M + 'bust_thumb.jpg" alt=""><h3>Готово! Забирай у фудтрака</h3><p>Метро Беруний, Ледовый дворец Алпомиш</p>' +
+    '<div class="tabs"><span>Принят: смеётся с бургером</span></div><div class="tabs"><span class="on">Готов: палец вверх</span><span>Выдан: в очках</span></div></div>');
+  app.appendChild(cell("A4", "Реакции маскота", "На экране заказа маскот меняет эмоцию: принят (смеётся с бургером), готов (палец вверх), выдан (в очках).", a4));
+
+  // S1 mascot walks in and waves
+  var s1 = el("phone spl s1", header() + '<div class="stage"><img class="walker" src="' + M + 'hero.jpg" alt=""><div class="bubble tailB hi" style="width:132px">Привет! Добро пожаловать!</div></div><div class="bot"><div class="lab"><span class="dots">ЗАГРУЖАЕМ МЕНЮ</span><small>Menyu yuklanmoqda</small></div>' + bar() + '</div>');
+  spl.appendChild(cell("S1", "Маскот выходит и здоровается", "Маскот в рост выходит слева шагами, появляется реплика «Привет!». Самый «живой» вариант.", s1));
+
+  // S2 conveyor with mascot above
+  var names = ["burger_cheese", "fries_m", "shake_choco", "hotdog_classic", "drink_cola", "nuggets", "juice_orange"], tr = "";
+  names.concat(names).forEach(function (n) { tr += '<img src="' + S + n + '.png" alt="">'; });
+  var s2 = el("phone spl s2", header() + '<div class="stage"><div><img class="mc pic bob" src="' + M + 'bust_laugh.jpg" alt="" style="margin:0 auto"><div class="belt"><div class="trk">' + tr + '</div><div class="rail"></div></div></div></div><div class="bot"><div class="lab"><span class="dots">ЗАГРУЖАЕМ МЕНЮ</span><small>Menyu yuklanmoqda</small></div>' + bar() + '</div>');
+  spl.appendChild(cell("S2", "Конвейер + маскот", "Текущая заставка с лентой, но над лентой смеётся маскот с бургером и покачивается. Минимум изменений.", s2));
+
+  // S3 at the grill
+  var s3 = el("phone spl s3", header() + '<div class="stage"><div style="position:relative"><img class="grill pic" src="' + M + 'scene_grill.jpg" alt=""><span class="steam" style="left:150px;top:60px"></span><span class="steam" style="left:176px;top:84px;animation-delay:.5s"></span><span class="steam" style="left:128px;top:96px;animation-delay:1s"></span></div></div><div class="bot"><div class="lab"><span class="dots">ЖАРИМ ТВОЁ МЕНЮ</span><small>Menyu tayyorlanmoqda</small></div>' + bar() + '</div>');
+  spl.appendChild(cell("S3", "У гриля", "Маскот жарит котлеты, над грилем поднимается пиксельный пар. Тематично и вкусно, но картинка не пиксельная.", s3));
+
+  // S4 expressions in turn
+  var s4 = el("phone spl s4", header() + '<div class="stage"><div class="cy pic"><img src="' + M + 'bust_thumb.jpg" alt=""><img src="' + M + 'bust_laugh.jpg" alt=""><img src="' + M + 'bust_cool.jpg" alt=""><img src="' + M + 'bust_peace.jpg" alt=""></div></div><div class="bot"><div class="lab"><span class="dots">ЗАГРУЗКА</span><small>Yuklanmoqda</small></div>' + bar() + '</div>');
+  spl.appendChild(cell("S4", "Смена эмоций", "Четыре эмоции маскота сменяют друг друга (палец вверх, смех, очки, победа). Просто и быстро, без лишних деталей.", s4));
+
+  // quick navigation to every variant
+  var nav = el("nav", "");
+  ["A1", "A2", "A3", "A4", "S1", "S2", "S3", "S4"].forEach(function (k, i) {
+    nav.insertAdjacentHTML("beforeend", '<a href="?v=' + k + '">' + k + '</a>' + (i === 3 ? '<span class="sep"></span>' : ''));
+  });
+  document.querySelector(".hint").after(nav);
+
+  // ?v=A2 shows only that variant, scaled to fill the real screen
+  var q = (new URLSearchParams(location.search).get("v") || "").toUpperCase();
+  var order = ["A1", "A2", "A3", "A4", "S1", "S2", "S3", "S4"], at = order.indexOf(q);
+  if (at >= 0) {
+    var ph = document.querySelectorAll(".cell")[at].querySelector(".phone");
+    var wrap = el("fullwrap", ""); wrap.appendChild(ph);
+    Array.prototype.forEach.call(document.body.children, function (n) { if (n.tagName !== "SCRIPT") n.style.display = "none"; });
+    document.body.appendChild(wrap);
+    var back = document.createElement("a"); back.className = "backbtn"; back.href = "mascot.html"; back.textContent = "Все варианты"; document.body.appendChild(back);
+    function fit() {
+      var k = window.innerWidth / 300;
+      wrap.style.width = "300px"; wrap.style.height = (window.innerHeight / k) + "px"; wrap.style.transform = "scale(" + k + ")";
+    }
+    fit(); window.addEventListener("resize", fit);
+  }
+})();
+</script>
+</body>
+</html>
