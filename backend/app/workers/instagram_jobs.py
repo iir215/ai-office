@@ -13,7 +13,7 @@ from app.services.instagram import (
 )
 from app.services.instagram_accounts import has_account
 from app.services.media_library import as_data_uri, get_assets
-from app.services.minimax_video import generate_video
+from app.services.video_gen import generate_video, generate_video_costed
 from app.services.openai_client import client
 from app.services.telegram import notify_company
 
@@ -204,7 +204,7 @@ def generate_instagram_video_post(
                     as_data_uri(a) for a in get_assets(db, company_id, reference_media_ids)
                 ]
             video_prompt = video_prompt or _build_video_prompt(topic, with_references=bool(reference_images))
-            video_bytes = generate_video(video_prompt, reference_images=reference_images)
+            video_bytes, cost_usd = generate_video_costed(video_prompt, reference_images=reference_images)
             video_url = host_video(video_bytes, company_id)
             container_id = create_video_container(company_id, video_url, caption)
             wait_for_video_container_ready(company_id, container_id)
@@ -228,7 +228,8 @@ def generate_instagram_video_post(
                 company_id,
                 f"🎬 [{agent.name}] Видео готово к согласованию.\n\n"
                 f"Подпись:\n{caption}\n\n"
-                f"Видео: {video_url}",
+                f"Видео: {video_url}"
+                + (f"\n\nСтоимость генерации ≈ ${cost_usd:.2f}" if cost_usd else ""),
                 reply_markup={
                     "inline_keyboard": [
                         [

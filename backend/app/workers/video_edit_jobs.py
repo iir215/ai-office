@@ -16,7 +16,7 @@ from app.services.instagram import (
 )
 from app.services.instagram_accounts import has_account
 from app.services.media_library import as_data_uri, get_assets
-from app.services.minimax_video import generate_video
+from app.services.video_gen import generate_video
 from app.services.telegram import notify_company
 from app.services.video_editor import (
     TextSpec,

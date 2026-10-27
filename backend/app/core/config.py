@@ -55,7 +55,18 @@ class Settings(BaseSettings):
 
     MINIMAX_API_KEY: str = ""
 
+    # Higgsfield API keys (console.higgsfield.ai); sent as "Key <id>:<secret>"
+    # Either the single key the console shows (HIGGSFIELD_API_KEY, e.g. "id:secret") or the two halves.
+    HIGGSFIELD_API_KEY: str = ""
+    HIGGSFIELD_API_KEY_ID: str = ""
+    HIGGSFIELD_API_KEY_SECRET: str = ""
+
     PUBLIC_BASE_URL: str = "https://aionbusiness.uz"
+
+    # Read-only reader of POS notifications (dedicated Telegram account, see app/pos_reader.py)
+    TELEGRAM_API_ID: int = 0
+    TELEGRAM_API_HASH: str = ""
+    POS_READER_SENDER: str = ""
 
     # Customer-facing Telegram bot that opens the ordering Mini App (a different
     # bot from the internal AION one). Mini App sign-in is validated with its token.

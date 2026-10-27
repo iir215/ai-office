@@ -17,3 +17,4 @@ from app.models.media_asset import MediaAsset
 from app.models.menu_item import MenuItem
 from app.models.shop_order import ShopOrder
 from app.models.team_chat import TeamChat
+from app.models.pos_event import PosEvent

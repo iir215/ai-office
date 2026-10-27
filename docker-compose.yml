@@ -55,6 +55,20 @@ services:
       - postgres
     restart: unless-stopped
 
+  pos_reader:
+    build: ./backend
+    container_name: aion_pos_reader
+    env_file:
+      - ./backend/.env
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python -m app.pos_reader
+    volumes:
+      - ./backend/pos_session:/app/pos_session
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
   security_auditor:
     build: ./backend
     container_name: aion_security_auditor

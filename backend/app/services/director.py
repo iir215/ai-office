@@ -12,6 +12,7 @@ from app.models.message import Message
 from app.models.pending_post import PendingPost
 from app.models.role import Role
 from app.models.task import Task
+from app.services import higgsfield
 from app.services.openai_client import client
 from app.services.instagram_accounts import has_account
 from app.services.media_library import MAX_REFERENCES, get_assets, list_assets
@@ -670,9 +671,15 @@ def _create_instagram_video_post(
     )
 
     used = f" using {len(media_ids)} reference photo(s)" if media_ids else ""
+    price = ""
+    if higgsfield.configured():
+        price = (
+            f" Estimated generation cost about ${higgsfield.estimate_video_cost(10, bool(media_ids)):.2f} "
+            "(Seedance 2.0, 10 s); tell the owner the price."
+        )
     return (
         f"{agent.name} is generating the video now{used} (this takes a few minutes) and will "
-        "send it to the owner on Telegram for approval before publishing."
+        f"send it to the owner on Telegram for approval before publishing.{price}"
     )
 
 
