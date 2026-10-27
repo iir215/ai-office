@@ -317,8 +317,8 @@ GUEST_TEXT = {
         "uz": "№{n}-buyurtma tayyor va yetkazib berishga topshirildi 🚚",
     },
     "done": {
-        "ru": "Приятного аппетита! Заказ №{n} выдан. Спасибо, что выбрали Bonch Burgers 💛",
-        "uz": "Yoqimli ishtaha! №{n}-buyurtma topshirildi. Bonch Burgers’ni tanlaganingiz uchun rahmat 💛",
+        "ru": "Приятного аппетита! Заказ №{n} выдан. Спасибо, что выбрали Bonch burgers 💛",
+        "uz": "Yoqimli ishtaha! №{n}-buyurtma topshirildi. Bonch burgers’ni tanlaganingiz uchun rahmat 💛",
     },
     "cancelled": {
         "ru": "К сожалению, заказ №{n} отменён. Если вы платили онлайн, мы вернём деньги.",

@@ -1,4 +1,4 @@
-"""The Bonch Burgers bot (@bonchburgersbot).
+"""The Bonch burgers bot (@bonchburgersbot).
 
 For guests: greets them and opens the ordering Mini App, and sends order status updates.
 For the team: add the bot to the kitchen group and send /orders_here there (only a person
@@ -19,8 +19,8 @@ from app.services.shop import apply_action, expire_unpaid, team_chats, tg_api
 API_URL = f"https://api.telegram.org/bot{settings.SHOP_BOT_TOKEN}"
 
 HELLO = {
-    "ru": "Добро пожаловать в Bonch Burgers! 🍔\nВыбирайте блюда, оплачивайте онлайн и забирайте у фудтрака или заказывайте доставку.",
-    "uz": "Bonch Burgers’ga xush kelibsiz! 🍔\nTaomlarni tanlang, onlayn to‘lang va foodtruckdan olib keting yoki yetkazib berishni buyurtma qiling.",
+    "ru": "Добро пожаловать в Bonch burgers! 🍔\nВыбирайте блюда, оплачивайте онлайн и забирайте у фудтрака или заказывайте доставку.",
+    "uz": "Bonch burgers’ga xush kelibsiz! 🍔\nTaomlarni tanlang, onlayn to‘lang va foodtruckdan olib keting yoki yetkazib berishni buyurtma qiling.",
 }
 BUTTON = {"ru": "🍔 Открыть меню", "uz": "🍔 Menyuni ochish"}
 
@@ -79,20 +79,20 @@ def handle_group_command(db, message: dict) -> None:
 
     sender = (message.get("from") or {}).get("id")
     if not sender or not is_staff(db, sender):
-        call("sendMessage", chat_id=chat["id"], text="Эту команду может отправить только сотрудник Bonch Burgers, подключённый в AION.")
+        call("sendMessage", chat_id=chat["id"], text="Эту команду может отправить только сотрудник Bonch burgers, подключённый в AION.")
         return
 
     existing = db.query(TeamChat).filter(TeamChat.chat_id == chat["id"]).first()
     if cmd == "/orders_here":
         if existing:
-            call("sendMessage", chat_id=chat["id"], text="Этот чат уже получает заказы Bonch Burgers ✅")
+            call("sendMessage", chat_id=chat["id"], text="Этот чат уже получает заказы Bonch burgers ✅")
             return
         db.add(TeamChat(company_id=settings.SHOP_COMPANY_ID, chat_id=chat["id"], title=chat.get("title")))
         db.commit()
         call(
             "sendMessage",
             chat_id=chat["id"],
-            text="Готово ✅ Новые заказы Bonch Burgers будут приходить сюда с кнопками «Принять», «Готов», «Выдан», «Отменить». "
+            text="Готово ✅ Новые заказы Bonch burgers будут приходить сюда с кнопками «Принять», «Готов», «Выдан», «Отменить». "
                  "Отключить: /orders_off",
         )
     else:
